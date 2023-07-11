@@ -26,7 +26,7 @@ from typing import Union
 from pyrogram import raw
 from pyrogram.raw.core import TLObject
 
-TranslatedText = '' # Union[raw.types.messages.TranslateNoResult, raw.types.messages.TranslateResultText]
+TranslatedText = Union[raw.types.messages.TranslateNoResult, raw.types.messages.TranslateResultText]
 
 
 # noinspection PyRedeclaration
