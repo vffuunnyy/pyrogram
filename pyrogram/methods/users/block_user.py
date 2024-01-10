@@ -18,13 +18,18 @@
 
 from typing import Union
 
+import pyrogram
 from pyrogram import raw
-from pyrogram.scaffold import Scaffold
 
 
-class BlockUser(Scaffold):
-    async def block_user(self, user_id: Union[int, str]) -> bool:
+class BlockUser:
+    async def block_user(
+        self: "pyrogram.Client",
+        user_id: Union[int, str]
+    ) -> bool:
         """Block a user.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             user_id (``int`` | ``str``)::
@@ -38,8 +43,12 @@ class BlockUser(Scaffold):
         Example:
             .. code-block:: python
 
-                app.block_user(user_id)
+                await app.block_user(user_id)
         """
         return bool(
-            await self.send(raw.functions.contacts.Block(id=await self.resolve_peer(user_id)))
+            await self.invoke(
+                raw.functions.contacts.Block(
+                    id=await self.resolve_peer(user_id)
+                )
+            )
         )

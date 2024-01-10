@@ -17,11 +17,11 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from io import BytesIO
-from typing import Any, Union, cast
+from typing import cast, Union, Any
 
-from pyrogram.raw.core.list import List
-from pyrogram.raw.core.primitives.int import Int, Long
-from pyrogram.raw.core.tl_object import TLObject
+from .int import Int, Long
+from ..list import List
+from ..tl_object import TLObject
 
 
 class Vector(bytes, TLObject):
@@ -46,7 +46,11 @@ class Vector(bytes, TLObject):
         size = (left / count) if count else 0
         data.seek(-left, 1)
 
-        return List(t.read(data) if t else Vector.read_bare(data, size) for _ in range(count))
+        return List(
+            t.read(data) if t
+            else Vector.read_bare(data, size)
+            for _ in range(count)
+        )
 
     def __new__(cls, value: list, t: Any = None) -> bytes:  # type: ignore
         return b"".join(

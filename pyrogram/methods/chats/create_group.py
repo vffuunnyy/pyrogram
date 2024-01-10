@@ -16,21 +16,26 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+from typing import Union, List
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 
-class CreateGroup(Scaffold):
+class CreateGroup:
     async def create_group(
-        self, title: str, users: Union[Union[int, str], list[Union[int, str]]]
+        self: "pyrogram.Client",
+        title: str,
+        users: Union[Union[int, str], List[Union[int, str]]]
     ) -> "types.Chat":
         """Create a new basic group.
 
         .. note::
 
             If you want to create a new supergroup, use :meth:`~pyrogram.Client.create_supergroup` instead.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             title (``str``):
@@ -47,14 +52,15 @@ class CreateGroup(Scaffold):
         Example:
             .. code-block:: python
 
-                app.create_group("Group Title", user_id)
+                await app.create_group("Group Title", user_id)
         """
         if not isinstance(users, list):
             users = [users]
 
-        r = await self.send(
+        r = await self.invoke(
             raw.functions.messages.CreateChat(
-                title=title, users=[await self.resolve_peer(u) for u in users]
+                title=title,
+                users=[await self.resolve_peer(u) for u in users]
             )
         )
 

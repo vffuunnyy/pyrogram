@@ -16,13 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from typing import List
 
 import pyrogram
-
-from pyrogram import raw, types
+from pyrogram import raw, utils
+from pyrogram import types
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
-from pyrogram.types.object import Object
+from ..object import Object
 
 
 class VideoNote(Object):
@@ -48,8 +49,8 @@ class VideoNote(Object):
         file_size (``int``, *optional*):
             File size.
 
-        date (``int``, *optional*):
-            Date the video note was sent in Unix time.
+        date (:py:obj:`~datetime.datetime`, *optional*):
+            Date the video note was sent.
 
         thumbs (List of :obj:`~pyrogram.types.Thumbnail`, *optional*):
             Video thumbnails.
@@ -63,10 +64,10 @@ class VideoNote(Object):
         file_unique_id: str,
         length: int,
         duration: int,
-        thumbs: list["types.Thumbnail"] = None,
+        thumbs: List["types.Thumbnail"] = None,
         mime_type: str = None,
         file_size: int = None,
-        date: int = None,
+        date: datetime = None
     ):
         super().__init__(client)
 
@@ -83,7 +84,7 @@ class VideoNote(Object):
     def _parse(
         client,
         video_note: "raw.types.Document",
-        video_attributes: "raw.types.DocumentAttributeVideo",
+        video_attributes: "raw.types.DocumentAttributeVideo"
     ) -> "VideoNote":
         return VideoNote(
             file_id=FileId(
@@ -91,16 +92,17 @@ class VideoNote(Object):
                 dc_id=video_note.dc_id,
                 media_id=video_note.id,
                 access_hash=video_note.access_hash,
-                file_reference=video_note.file_reference,
+                file_reference=video_note.file_reference
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT, media_id=video_note.id
+                file_unique_type=FileUniqueType.DOCUMENT,
+                media_id=video_note.id
             ).encode(),
             length=video_attributes.w,
             duration=video_attributes.duration,
             file_size=video_note.size,
             mime_type=video_note.mime_type,
-            date=video_note.date,
+            date=utils.timestamp_to_datetime(video_note.date),
             thumbs=types.Thumbnail._parse(client, video_note),
-            client=client,
+            client=client
         )

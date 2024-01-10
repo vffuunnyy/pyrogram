@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram.handlers.handler import Handler
+from typing import Callable
+
+from .handler import Handler
 
 
 class PollHandler(Handler):
@@ -28,7 +30,7 @@ class PollHandler(Handler):
     :meth:`~pyrogram.Client.on_poll` decorator.
 
     Parameters:
-        callback (``callable``):
+        callback (``Callable``):
             Pass a function that will be called when a new poll update arrives. It takes *(client, poll)*
             as positional arguments (look at the section below for a detailed description).
 
@@ -44,5 +46,5 @@ class PollHandler(Handler):
             The received poll.
     """
 
-    def __init__(self, callback: callable, filters=None):
+    def __init__(self, callback: Callable, filters=None):
         super().__init__(callback, filters)

@@ -18,16 +18,21 @@
 
 import os
 
+import pyrogram
 from pyrogram import raw
-from pyrogram.scaffold import Scaffold
-from pyrogram.utils import btoi, compute_password_check, compute_password_hash, itob
+from pyrogram.utils import compute_password_hash, compute_password_check, btoi, itob
 
 
-class ChangeCloudPassword(Scaffold):
+class ChangeCloudPassword:
     async def change_cloud_password(
-        self, current_password: str, new_password: str, new_hint: str = ""
+        self: "pyrogram.Client",
+        current_password: str,
+        new_password: str,
+        new_hint: str = ""
     ) -> bool:
         """Change your Two-Step Verification password (Cloud Password) with a new one.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             current_password (``str``):
@@ -49,12 +54,12 @@ class ChangeCloudPassword(Scaffold):
             .. code-block:: python
 
                 # Change password only
-                app.change_cloud_password("current_password", "new_password")
+                await app.change_cloud_password("current_password", "new_password")
 
                 # Change password and hint
-                app.change_cloud_password("current_password", "new_password", new_hint="hint")
+                await app.change_cloud_password("current_password", "new_password", new_hint="hint")
         """
-        r = await self.send(raw.functions.account.GetPassword())
+        r = await self.invoke(raw.functions.account.GetPassword())
 
         if not r.has_password:
             raise ValueError("There is no cloud password to change")
@@ -63,12 +68,14 @@ class ChangeCloudPassword(Scaffold):
         new_hash = btoi(compute_password_hash(r.new_algo, new_password))
         new_hash = itob(pow(r.new_algo.g, new_hash, btoi(r.new_algo.p)))
 
-        await self.send(
+        await self.invoke(
             raw.functions.account.UpdatePasswordSettings(
                 password=compute_password_check(r, current_password),
                 new_settings=raw.types.account.PasswordInputSettings(
-                    new_algo=r.new_algo, new_password_hash=new_hash, hint=new_hint
-                ),
+                    new_algo=r.new_algo,
+                    new_password_hash=new_hash,
+                    hint=new_hint
+                )
             )
         )
 

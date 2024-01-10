@@ -17,11 +17,11 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from io import BytesIO
-from typing import Any, List
+from typing import List, Any
 
-from pyrogram.raw.core.message import Message
-from pyrogram.raw.core.primitives.int import Int
-from pyrogram.raw.core.tl_object import TLObject
+from .message import Message
+from .primitives.int import Int
+from .tl_object import TLObject
 
 
 class MsgContainer(TLObject):
@@ -31,7 +31,7 @@ class MsgContainer(TLObject):
 
     QUALNAME = "MsgContainer"
 
-    def __init__(self, messages: list[Message]):
+    def __init__(self, messages: List[Message]):
         self.messages = messages
 
     @staticmethod

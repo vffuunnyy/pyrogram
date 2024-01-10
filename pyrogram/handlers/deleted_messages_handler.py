@@ -16,14 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections.abc import Callable
-from typing import List
+from typing import List, Callable
 
 import pyrogram
-
 from pyrogram.filters import Filter
-from pyrogram.handlers.handler import Handler
 from pyrogram.types import Message
+from .handler import Handler
 
 
 class DeletedMessagesHandler(Handler):
@@ -34,7 +32,7 @@ class DeletedMessagesHandler(Handler):
     :meth:`~pyrogram.Client.on_deleted_messages` decorator.
 
     Parameters:
-        callback (``callable``):
+        callback (``Callable``):
             Pass a function that will be called when one or more messages have been deleted.
             It takes *(client, messages)* as positional arguments (look at the section below for a detailed description).
 
@@ -53,7 +51,7 @@ class DeletedMessagesHandler(Handler):
     def __init__(self, callback: Callable, filters: Filter = None):
         super().__init__(callback, filters)
 
-    async def check(self, client: "pyrogram.Client", messages: list[Message]):
+    async def check(self, client: "pyrogram.Client", messages: List[Message]):
         # Every message should be checked, if at least one matches the filter True is returned
         # otherwise, or if the list is empty, False is returned
         for message in messages:

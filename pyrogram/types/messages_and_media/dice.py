@@ -17,9 +17,8 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
-
 from pyrogram import raw
-from pyrogram.types.object import Object
+from ..object import Object
 
 
 class Dice(Object):
@@ -41,4 +40,8 @@ class Dice(Object):
 
     @staticmethod
     def _parse(client, dice: "raw.types.MessageMediaDice") -> "Dice":
-        return Dice(emoji=dice.emoticon, value=dice.value, client=client)
+        return Dice(
+            emoji=dice.emoticon,
+            value=dice.value,
+            client=client
+        )

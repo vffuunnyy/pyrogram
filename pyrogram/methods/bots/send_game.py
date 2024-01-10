@@ -18,26 +18,32 @@
 
 from typing import Union
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
+from pyrogram import utils
 
 
-class SendGame(Scaffold):
+class SendGame:
     async def send_game(
-        self,
+        self: "pyrogram.Client",
         chat_id: Union[int, str],
         game_short_name: str,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        reply_to_chat_id: Union[int, str] = None,
         protect_content: bool = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
-        ] = None,
+            "types.ForceReply"
+        ] = None
     ) -> "types.Message":
         """Send a game.
+
+        .. include:: /_includes/usable-by/bots.rst
 
         Parameters:
             chat_id (``int`` | ``str``):
@@ -52,8 +58,15 @@ class SendGame(Scaffold):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            reply_to_chat_id (``int``, *optional*):
+                If the message is a reply, ID of the original chat.
 
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
@@ -68,27 +81,34 @@ class SendGame(Scaffold):
         Example:
             .. code-block:: python
 
-                app.send_game(chat_id, "gamename")
+                await app.send_game(chat_id, "gamename")
         """
-        r = await self.send(
+        r = await self.invoke(
             raw.functions.messages.SendMedia(
                 peer=await self.resolve_peer(chat_id),
                 media=raw.types.InputMediaGame(
                     id=raw.types.InputGameShortName(
-                        bot_id=raw.types.InputUserSelf(), short_name=game_short_name
+                        bot_id=raw.types.InputUserSelf(),
+                        short_name=game_short_name
                     ),
                 ),
                 message="",
                 silent=disable_notification or None,
-                reply_to_msg_id=reply_to_message_id,
+                reply_to=utils.get_reply_to(
+                    reply_to_message_id=reply_to_message_id,
+                    reply_to_peer=await self.resolve_peer(reply_to_chat_id) if reply_to_chat_id else None,
+                    message_thread_id=message_thread_id
+                ),
                 random_id=self.rnd_id(),
                 noforwards=protect_content,
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                reply_markup=await reply_markup.write(self) if reply_markup else None
             )
         )
 
         for i in r.updates:
             if isinstance(i, (raw.types.UpdateNewMessage, raw.types.UpdateNewChannelMessage)):
                 return await types.Message._parse(
-                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
+                    self, i.message,
+                    {i.id: i for i in r.users},
+                    {i.id: i for i in r.chats}
                 )

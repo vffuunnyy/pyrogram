@@ -17,19 +17,22 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-
 from typing import List
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
-
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 log = logging.getLogger(__name__)
 
 
-class GetContacts(Scaffold):
-    async def get_contacts(self) -> list["types.User"]:
+class GetContacts:
+    async def get_contacts(
+        self: "pyrogram.Client"
+    ) -> List["types.User"]:
         """Get contacts from your Telegram address book.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Returns:
             List of :obj:`~pyrogram.types.User`: On success, a list of users is returned.
@@ -37,8 +40,8 @@ class GetContacts(Scaffold):
         Example:
             .. code-block:: python
 
-                contacts = app.get_contacts()
+                contacts = await app.get_contacts()
                 print(contacts)
         """
-        contacts = await self.send(raw.functions.contacts.GetContacts(hash=0))
+        contacts = await self.invoke(raw.functions.contacts.GetContacts(hash=0))
         return types.List(types.User._parse(self, user) for user in contacts.users)

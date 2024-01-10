@@ -16,21 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram.methods.auth.accept_terms_of_service import AcceptTermsOfService
-from pyrogram.methods.auth.check_password import CheckPassword
-from pyrogram.methods.auth.connect import Connect
-from pyrogram.methods.auth.disconnect import Disconnect
-from pyrogram.methods.auth.get_password_hint import GetPasswordHint
-from pyrogram.methods.auth.initialize import Initialize
-from pyrogram.methods.auth.log_out import LogOut
-from pyrogram.methods.auth.recover_password import RecoverPassword
-from pyrogram.methods.auth.resend_code import ResendCode
-from pyrogram.methods.auth.send_code import SendCode
-from pyrogram.methods.auth.send_recovery_code import SendRecoveryCode
-from pyrogram.methods.auth.sign_in import SignIn
-from pyrogram.methods.auth.sign_in_bot import SignInBot
-from pyrogram.methods.auth.sign_up import SignUp
-from pyrogram.methods.auth.terminate import Terminate
+from .accept_terms_of_service import AcceptTermsOfService
+from .check_password import CheckPassword
+from .connect import Connect
+from .disconnect import Disconnect
+from .get_password_hint import GetPasswordHint
+from .initialize import Initialize
+from .log_out import LogOut
+from .recover_password import RecoverPassword
+from .resend_code import ResendCode
+from .send_code import SendCode
+from .send_recovery_code import SendRecoveryCode
+from .sign_in import SignIn
+from .sign_in_bot import SignInBot
+from .sign_up import SignUp
+from .terminate import Terminate
 
 
 class Auth(
@@ -48,6 +48,6 @@ class Auth(
     SignIn,
     SignInBot,
     SignUp,
-    Terminate,
+    Terminate
 ):
     pass

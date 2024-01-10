@@ -19,7 +19,7 @@
 from io import BytesIO
 from typing import Any
 
-from pyrogram.raw.core.tl_object import TLObject
+from ..tl_object import TLObject
 
 
 class Int(bytes, TLObject):

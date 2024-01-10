@@ -19,22 +19,22 @@
 from typing import List
 
 import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
 
-
-class SetBotCommands(Scaffold):
+class SetBotCommands:
     async def set_bot_commands(
         self: "pyrogram.Client",
-        commands: list["types.BotCommand"],
+        commands: List["types.BotCommand"],
         scope: "types.BotCommandScope" = types.BotCommandScopeDefault(),
         language_code: str = "",
-    ):
+    ) -> bool:
         """Set the list of the bot's commands.
-
         The commands passed will overwrite any command set previously.
         This method can be used by the own bot only.
+
+        .. include:: /_includes/usable-by/bots.rst
 
         Parameters:
             commands (List of :obj:`~pyrogram.types.BotCommand`):
@@ -59,12 +59,12 @@ class SetBotCommands(Scaffold):
                 from pyrogram.types import BotCommand
 
                 # Set new commands
-                app.set_bot_commands([
+                await app.set_bot_commands([
                     BotCommand("start", "Start the bot"),
                     BotCommand("settings", "Bot settings")])
         """
 
-        return await self.send(
+        return await self.invoke(
             raw.functions.bots.SetBotCommands(
                 commands=[c.write() for c in commands],
                 scope=await scope.write(self),

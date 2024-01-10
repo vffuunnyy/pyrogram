@@ -18,12 +18,16 @@
 
 from typing import Union
 
+import pyrogram
 from pyrogram import raw
-from pyrogram.scaffold import Scaffold
 
 
-class SetChatTitle(Scaffold):
-    async def set_chat_title(self, chat_id: Union[int, str], title: str) -> bool:
+class SetChatTitle:
+    async def set_chat_title(
+        self: "pyrogram.Client",
+        chat_id: Union[int, str],
+        title: str
+    ) -> bool:
         """Change the title of a chat.
         Titles can't be changed for private chats.
         You must be an administrator in the chat for this to work and must have the appropriate admin rights.
@@ -31,6 +35,8 @@ class SetChatTitle(Scaffold):
         Note:
             In regular groups (non-supergroups), this method will only work if the "All Members Are Admins"
             setting is off.
+
+        .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
             chat_id (``int`` | ``str``):
@@ -48,14 +54,24 @@ class SetChatTitle(Scaffold):
         Example:
             .. code-block:: python
 
-                app.set_chat_title(chat_id, "New Title")
+                await app.set_chat_title(chat_id, "New Title")
         """
         peer = await self.resolve_peer(chat_id)
 
         if isinstance(peer, raw.types.InputPeerChat):
-            await self.send(raw.functions.messages.EditChatTitle(chat_id=peer.chat_id, title=title))
+            await self.invoke(
+                raw.functions.messages.EditChatTitle(
+                    chat_id=peer.chat_id,
+                    title=title
+                )
+            )
         elif isinstance(peer, raw.types.InputPeerChannel):
-            await self.send(raw.functions.channels.EditTitle(channel=peer, title=title))
+            await self.invoke(
+                raw.functions.channels.EditTitle(
+                    channel=peer,
+                    title=title
+                )
+            )
         else:
             raise ValueError(f'The chat_id "{chat_id}" belongs to a user')
 

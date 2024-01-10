@@ -17,7 +17,6 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
-
 from pyrogram import raw
 from pyrogram.errors import AuthBytesInvalid
 from pyrogram.session import Session
@@ -33,18 +32,25 @@ async def get_session(client: "pyrogram.Client", dc_id: int):
             return client.media_sessions[dc_id]
 
         session = client.media_sessions[dc_id] = Session(
-            client, dc_id, await Auth(client, dc_id, False).create(), False, is_media=True
+            client, dc_id,
+            await Auth(client, dc_id, await client.storage.test_mode()).create(),
+            await client.storage.test_mode(), is_media=True
         )
 
         await session.start()
 
         for _ in range(3):
-            exported_auth = await client.send(raw.functions.auth.ExportAuthorization(dc_id=dc_id))
+            exported_auth = await client.invoke(
+                raw.functions.auth.ExportAuthorization(
+                    dc_id=dc_id
+                )
+            )
 
             try:
-                await session.send(
+                await session.invoke(
                     raw.functions.auth.ImportAuthorization(
-                        id=exported_auth.id, bytes=exported_auth.bytes
+                        id=exported_auth.id,
+                        bytes=exported_auth.bytes
                     )
                 )
             except AuthBytesInvalid:

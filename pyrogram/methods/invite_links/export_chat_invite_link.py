@@ -18,13 +18,14 @@
 
 from typing import Union
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 
-class ExportChatInviteLink(Scaffold):
+class ExportChatInviteLink:
     async def export_chat_invite_link(
-        self,
+        self: "pyrogram.Client",
         chat_id: Union[int, str],
     ) -> "types.ChatInviteLink":
         """Generate a new primary invite link for a chat; any previously generated primary link is revoked.
@@ -38,6 +39,8 @@ class ExportChatInviteLink(Scaffold):
             :meth:`~pyrogram.Client.get_chat` method. If your bot needs to generate a new invite link replacing its
             previous one, use this method again.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
         Parameters:
             chat_id (``int`` | ``str``):
                 Unique identifier for the target chat or username of the target channel/supergroup
@@ -50,11 +53,12 @@ class ExportChatInviteLink(Scaffold):
             .. code-block:: python
 
                 # Generate a new primary link
-                link = app.export_chat_invite_link(chat_id)
+                link = await app.export_chat_invite_link(chat_id)
         """
-        r = await self.send(
+        r = await self.invoke(
             raw.functions.messages.ExportChatInvite(
-                peer=await self.resolve_peer(chat_id), legacy_revoke_permanent=True
+                peer=await self.resolve_peer(chat_id),
+                legacy_revoke_permanent=True
             )
         )
 

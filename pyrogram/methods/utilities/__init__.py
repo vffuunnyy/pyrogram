@@ -16,17 +16,24 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram.methods.utilities.add_handler import AddHandler
-from pyrogram.methods.utilities.export_session_string import ExportSessionString
-from pyrogram.methods.utilities.remove_handler import RemoveHandler
-from pyrogram.methods.utilities.restart import Restart
-from pyrogram.methods.utilities.run import Run
-from pyrogram.methods.utilities.start import Start
-from pyrogram.methods.utilities.stop import Stop
-from pyrogram.methods.utilities.stop_transmission import StopTransmission
+from .add_handler import AddHandler
+from .export_session_string import ExportSessionString
+from .remove_handler import RemoveHandler
+from .restart import Restart
+from .run import Run
+from .start import Start
+from .stop import Stop
+from .stop_transmission import StopTransmission
 
 
 class Utilities(
-    AddHandler, ExportSessionString, RemoveHandler, Restart, Run, Start, Stop, StopTransmission
+    AddHandler,
+    ExportSessionString,
+    RemoveHandler,
+    Restart,
+    Run,
+    Start,
+    Stop,
+    StopTransmission
 ):
     pass

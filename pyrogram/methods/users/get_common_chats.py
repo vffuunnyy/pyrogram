@@ -16,15 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+from typing import Union, List
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 
-class GetCommonChats(Scaffold):
-    async def get_common_chats(self, user_id: Union[int, str]) -> list:
+class GetCommonChats:
+    async def get_common_chats(
+        self: "pyrogram.Client",
+        user_id: Union[int, str]
+    ) -> List["types.Chat"]:
         """Get the common chats you have with a user.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             user_id (``int`` | ``str``):
@@ -41,14 +47,14 @@ class GetCommonChats(Scaffold):
         Example:
             .. code-block:: python
 
-                common = app.get_common_chats(user_id)
+                common = await app.get_common_chats(user_id)
                 print(common)
         """
 
         peer = await self.resolve_peer(user_id)
 
         if isinstance(peer, raw.types.InputPeerUser):
-            r = await self.send(
+            r = await self.invoke(
                 raw.functions.messages.GetCommonChats(
                     user_id=peer,
                     max_id=0,

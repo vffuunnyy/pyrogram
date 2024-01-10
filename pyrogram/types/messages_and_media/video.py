@@ -16,13 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from typing import List
 
 import pyrogram
-
-from pyrogram import raw, types
+from pyrogram import raw, utils
+from pyrogram import types
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
-from pyrogram.types.object import Object
+from ..object import Object
 
 
 class Video(Object):
@@ -60,8 +61,8 @@ class Video(Object):
         ttl_seconds (``int``. *optional*):
             Time-to-live seconds, for secret photos.
 
-        date (``int``, *optional*):
-            Date the video was sent in Unix time.
+        date (:py:obj:`~datetime.datetime`, *optional*):
+            Date the video was sent.
 
         thumbs (List of :obj:`~pyrogram.types.Thumbnail`, *optional*):
             Video thumbnails.
@@ -81,8 +82,8 @@ class Video(Object):
         file_size: int = None,
         supports_streaming: bool = None,
         ttl_seconds: int = None,
-        date: int = None,
-        thumbs: list["types.Thumbnail"] = None,
+        date: datetime = None,
+        thumbs: List["types.Thumbnail"] = None
     ):
         super().__init__(client)
 
@@ -105,7 +106,7 @@ class Video(Object):
         video: "raw.types.Document",
         video_attributes: "raw.types.DocumentAttributeVideo",
         file_name: str,
-        ttl_seconds: int = None,
+        ttl_seconds: int = None
     ) -> "Video":
         return Video(
             file_id=FileId(
@@ -113,10 +114,11 @@ class Video(Object):
                 dc_id=video.dc_id,
                 media_id=video.id,
                 access_hash=video.access_hash,
-                file_reference=video.file_reference,
+                file_reference=video.file_reference
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT, media_id=video.id
+                file_unique_type=FileUniqueType.DOCUMENT,
+                media_id=video.id
             ).encode(),
             width=video_attributes.w,
             height=video_attributes.h,
@@ -125,8 +127,8 @@ class Video(Object):
             mime_type=video.mime_type,
             supports_streaming=video_attributes.supports_streaming,
             file_size=video.size,
-            date=video.date,
+            date=utils.timestamp_to_datetime(video.date),
             ttl_seconds=ttl_seconds,
             thumbs=types.Thumbnail._parse(client, video),
-            client=client,
+            client=client
         )

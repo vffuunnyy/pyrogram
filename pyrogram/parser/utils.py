@@ -17,9 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-
 from struct import unpack
-
 
 # SMP = Supplementary Multilingual Plane: https://en.wikipedia.org/wiki/Plane_(Unicode)#Overview
 SMP_RE = re.compile(r"[\U00010000-\U0010FFFF]")
@@ -30,7 +28,7 @@ def add_surrogates(text):
     return SMP_RE.sub(
         lambda match:  # Split SMP in two surrogates
         "".join(chr(i) for i in unpack("<HH", match.group().encode("utf-16le"))),
-        text,
+        text
     )
 
 

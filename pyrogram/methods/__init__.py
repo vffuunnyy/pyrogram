@@ -16,17 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram.methods.advanced import Advanced
-from pyrogram.methods.auth import Auth
-from pyrogram.methods.bots import Bots
-from pyrogram.methods.chats import Chats
-from pyrogram.methods.contacts import Contacts
-from pyrogram.methods.decorators import Decorators
-from pyrogram.methods.invite_links import InviteLinks
-from pyrogram.methods.messages import Messages
-from pyrogram.methods.password import Password
-from pyrogram.methods.users import Users
-from pyrogram.methods.utilities import Utilities
+from .advanced import Advanced
+from .auth import Auth
+from .bots import Bots
+from .chats import Chats
+from .contacts import Contacts
+from .decorators import Decorators
+from .invite_links import InviteLinks
+from .messages import Messages
+from .password import Password
+from .premium import Premium
+from .users import Users
+from .stories import Stories
+from .utilities import Utilities
 
 
 class Methods(
@@ -35,8 +37,10 @@ class Methods(
     Bots,
     Contacts,
     Password,
+    Premium,
     Chats,
     Users,
+    Stories,
     Messages,
     Decorators,
     Utilities,

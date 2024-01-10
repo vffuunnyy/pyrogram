@@ -16,12 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional
+from typing import Optional, List
 
 import pyrogram
-
-from pyrogram import raw, types, utils
-from pyrogram.types.input_message_content.input_message_content import InputMessageContent
+from pyrogram import raw, types, utils, enums
+from .input_message_content import InputMessageContent
 
 
 class InputTextMessageContent(InputMessageContent):
@@ -31,12 +30,9 @@ class InputTextMessageContent(InputMessageContent):
         message_text (``str``):
             Text of the message to be sent, 1-4096 characters.
 
-        parse_mode (``str``, *optional*):
+        parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
             By default, texts are parsed using both Markdown and HTML styles.
             You can combine both syntaxes together.
-            Pass "markdown" or "md" to enable Markdown-style parsing only.
-            Pass "html" to enable HTML-style parsing only.
-            Pass None to completely disable style parsing.
 
         entities (List of :obj:`~pyrogram.types.MessageEntity`):
             List of special entities that appear in message text, which can be specified instead of *parse_mode*.
@@ -48,9 +44,9 @@ class InputTextMessageContent(InputMessageContent):
     def __init__(
         self,
         message_text: str,
-        parse_mode: Optional[str] = object,
-        entities: list["types.MessageEntity"] = None,
-        disable_web_page_preview: bool = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        entities: List["types.MessageEntity"] = None,
+        disable_web_page_preview: bool = None
     ):
         super().__init__()
 
@@ -60,15 +56,13 @@ class InputTextMessageContent(InputMessageContent):
         self.disable_web_page_preview = disable_web_page_preview
 
     async def write(self, client: "pyrogram.Client", reply_markup):
-        message, entities = (
-            await utils.parse_text_entities(
-                client, self.message_text, self.parse_mode, self.entities
-            )
-        ).values()
+        message, entities = (await utils.parse_text_entities(
+            client, self.message_text, self.parse_mode, self.entities
+        )).values()
 
         return raw.types.InputBotInlineMessageText(
             no_webpage=self.disable_web_page_preview or None,
             reply_markup=await reply_markup.write(client) if reply_markup else None,
             message=message,
-            entities=entities,
+            entities=entities
         )

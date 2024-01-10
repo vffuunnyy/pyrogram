@@ -18,13 +18,13 @@
 
 from io import BytesIO
 from json import dumps
-from typing import Any, Dict, List, Union, cast
+from typing import cast, List, Any, Union, Dict
 
-from pyrogram.raw.all import objects
+from ..all import objects
 
 
 class TLObject:
-    __slots__: list[str] = []
+    __slots__: List[str] = []
 
     QUALNAME = "Base"
 
@@ -36,15 +36,17 @@ class TLObject:
         pass
 
     @staticmethod
-    def default(obj: "TLObject") -> Union[str, dict[str, str]]:
+    def default(obj: "TLObject") -> Union[str, Dict[str, str]]:
         if isinstance(obj, bytes):
             return repr(obj)
 
         return {
             "_": obj.QUALNAME,
             **{
-                attr: getattr(obj, attr) for attr in obj.__slots__ if getattr(obj, attr) is not None
-            },
+                attr: getattr(obj, attr)
+                for attr in obj.__slots__
+                if getattr(obj, attr) is not None
+            }
         }
 
     def __str__(self) -> str:
@@ -57,10 +59,10 @@ class TLObject:
         return "pyrogram.raw.{}({})".format(
             self.QUALNAME,
             ", ".join(
-                f"{attr}={getattr(self, attr)!r}"
+                f"{attr}={repr(getattr(self, attr))}"
                 for attr in self.__slots__
                 if getattr(self, attr) is not None
-            ),
+            )
         )
 
     def __eq__(self, other: Any) -> bool:
@@ -75,12 +77,6 @@ class TLObject:
 
     def __len__(self) -> int:
         return len(self.write())
-
-    def __getitem__(self, item: Any) -> Any:
-        return getattr(self, item)
-
-    def __setitem__(self, key: Any, value: Any) -> Any:
-        setattr(self, key, value)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         pass

@@ -18,20 +18,23 @@
 
 from typing import Union
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 
-class AddContact(Scaffold):
+class AddContact:
     async def add_contact(
-        self,
+        self: "pyrogram.Client",
         user_id: Union[int, str],
         first_name: str,
         last_name: str = "",
         phone_number: str = "",
-        share_phone_number: bool = False,
+        share_phone_number: bool = False
     ):
         """Add an existing Telegram user as contact, even without a phone number.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             user_id (``int`` | ``str``):
@@ -56,16 +59,19 @@ class AddContact(Scaffold):
         Example:
             .. code-block:: python
 
-                app.add_contact(12345678, "Foo")
-                app.add_contact("username", "Bar")
+                # Add contact by id
+                await app.add_contact(12345678, "Foo")
+
+                # Add contact by username
+                await app.add_contact("username", "Bar")
         """
-        r = await self.send(
+        r = await self.invoke(
             raw.functions.contacts.AddContact(
                 id=await self.resolve_peer(user_id),
                 first_name=first_name,
                 last_name=last_name,
                 phone=phone_number,
-                add_phone_privacy_exception=share_phone_number,
+                add_phone_privacy_exception=share_phone_number
             )
         )
 

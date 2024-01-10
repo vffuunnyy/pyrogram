@@ -18,20 +18,20 @@
 
 import logging
 import re
-
 from typing import Union
 
-from pyrogram import raw, utils
+import pyrogram
+from pyrogram import raw
+from pyrogram import utils
 from pyrogram.errors import PeerIdInvalid
-from pyrogram.scaffold import Scaffold
-
 
 log = logging.getLogger(__name__)
 
 
-class ResolvePeer(Scaffold):
+class ResolvePeer:
     async def resolve_peer(
-        self, peer_id: Union[int, str]
+        self: "pyrogram.Client",
+        peer_id: Union[int, str]
     ) -> Union[raw.base.InputPeer, raw.base.InputUser, raw.base.InputChannel]:
         """Get the InputPeer of a known peer id.
         Useful whenever an InputPeer type is required.
@@ -41,6 +41,8 @@ class ResolvePeer(Scaffold):
             This is a utility method intended to be used **only** when working with raw
             :obj:`functions <pyrogram.api.functions>` (i.e: a Telegram API method you wish to use which is not
             available yet in the Client class as an easy-to-use method).
+
+        .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
             peer_id (``int`` | ``str``):
@@ -71,7 +73,11 @@ class ResolvePeer(Scaffold):
                     try:
                         return await self.storage.get_peer_by_username(peer_id)
                     except KeyError:
-                        await self.send(raw.functions.contacts.ResolveUsername(username=peer_id))
+                        await self.invoke(
+                            raw.functions.contacts.ResolveUsername(
+                                username=peer_id
+                            )
+                        )
 
                         return await self.storage.get_peer_by_username(peer_id)
                 else:
@@ -84,20 +90,30 @@ class ResolvePeer(Scaffold):
 
             if peer_type == "user":
                 await self.fetch_peers(
-                    await self.send(
+                    await self.invoke(
                         raw.functions.users.GetUsers(
-                            id=[raw.types.InputUser(user_id=peer_id, access_hash=0)]
+                            id=[
+                                raw.types.InputUser(
+                                    user_id=peer_id,
+                                    access_hash=0
+                                )
+                            ]
                         )
                     )
                 )
             elif peer_type == "chat":
-                await self.send(raw.functions.messages.GetChats(id=[-peer_id]))
+                await self.invoke(
+                    raw.functions.messages.GetChats(
+                        id=[-peer_id]
+                    )
+                )
             else:
-                await self.send(
+                await self.invoke(
                     raw.functions.channels.GetChannels(
                         id=[
                             raw.types.InputChannel(
-                                channel_id=utils.get_channel_id(peer_id), access_hash=0
+                                channel_id=utils.get_channel_id(peer_id),
+                                access_hash=0
                             )
                         ]
                     )

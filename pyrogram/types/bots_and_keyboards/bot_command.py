@@ -17,7 +17,8 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from pyrogram import raw
-from pyrogram.types.object import Object
+
+from ..object import Object
 
 
 class BotCommand(Object):
@@ -46,4 +47,7 @@ class BotCommand(Object):
 
     @staticmethod
     def read(c: "raw.types.BotCommand") -> "BotCommand":
-        return BotCommand(command=c.command, description=c.description)
+        return BotCommand(
+            command=c.command,
+            description=c.description
+        )

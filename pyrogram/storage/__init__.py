@@ -16,6 +16,6 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram.storage.file_storage import FileStorage
-from pyrogram.storage.memory_storage import MemoryStorage
-from pyrogram.storage.storage import Storage
+from .file_storage import FileStorage
+from .memory_storage import MemoryStorage
+from .storage import Storage

@@ -16,13 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from typing import List
 
 import pyrogram
-
-from pyrogram import raw, types
+from pyrogram import raw, utils
+from pyrogram import types
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
-from pyrogram.types.object import Object
+from ..object import Object
 
 
 class Animation(Object):
@@ -54,8 +55,8 @@ class Animation(Object):
         file_size (``int``, *optional*):
             File size.
 
-        date (``int``, *optional*):
-            Date the animation was sent in Unix time.
+        date (:py:obj:`~datetime.datetime`, *optional*):
+            Date the animation was sent.
 
         thumbs (List of :obj:`~pyrogram.types.Thumbnail`, *optional*):
             Animation thumbnails.
@@ -73,8 +74,8 @@ class Animation(Object):
         file_name: str = None,
         mime_type: str = None,
         file_size: int = None,
-        date: int = None,
-        thumbs: list["types.Thumbnail"] = None,
+        date: datetime = None,
+        thumbs: List["types.Thumbnail"] = None
     ):
         super().__init__(client)
 
@@ -94,7 +95,7 @@ class Animation(Object):
         client,
         animation: "raw.types.Document",
         video_attributes: "raw.types.DocumentAttributeVideo",
-        file_name: str,
+        file_name: str
     ) -> "Animation":
         return Animation(
             file_id=FileId(
@@ -102,10 +103,11 @@ class Animation(Object):
                 dc_id=animation.dc_id,
                 media_id=animation.id,
                 access_hash=animation.access_hash,
-                file_reference=animation.file_reference,
+                file_reference=animation.file_reference
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT, media_id=animation.id
+                file_unique_type=FileUniqueType.DOCUMENT,
+                media_id=animation.id
             ).encode(),
             width=getattr(video_attributes, "w", 0),
             height=getattr(video_attributes, "h", 0),
@@ -113,7 +115,7 @@ class Animation(Object):
             mime_type=animation.mime_type,
             file_size=animation.size,
             file_name=file_name,
-            date=animation.date,
+            date=utils.timestamp_to_datetime(animation.date),
             thumbs=types.Thumbnail._parse(client, animation),
-            client=client,
+            client=client
         )

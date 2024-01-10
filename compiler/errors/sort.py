@@ -17,9 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import csv
-
 from pathlib import Path
-
 
 for p in Path("source").glob("*.tsv"):
     with open(p) as f:

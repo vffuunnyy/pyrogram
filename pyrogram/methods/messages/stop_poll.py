@@ -18,20 +18,23 @@
 
 from typing import Union
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 
-class StopPoll(Scaffold):
+class StopPoll:
     async def stop_poll(
-        self,
+        self: "pyrogram.Client",
         chat_id: Union[int, str],
         message_id: int,
-        reply_markup: "types.InlineKeyboardMarkup" = None,
+        reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> "types.Poll":
         """Stop a poll which was sent by you.
 
         Stopped polls can't be reopened and nobody will be able to vote in it anymore.
+
+        .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
             chat_id (``int`` | ``str``):
@@ -51,18 +54,23 @@ class StopPoll(Scaffold):
         Example:
             .. code-block:: python
 
-                app.stop_poll(chat_id, message_id)
+                await app.stop_poll(chat_id, message_id)
         """
         poll = (await self.get_messages(chat_id, message_id)).poll
 
-        r = await self.send(
+        r = await self.invoke(
             raw.functions.messages.EditMessage(
                 peer=await self.resolve_peer(chat_id),
                 id=message_id,
                 media=raw.types.InputMediaPoll(
-                    poll=raw.types.Poll(id=int(poll.id), closed=True, question="", answers=[])
+                    poll=raw.types.Poll(
+                        id=int(poll.id),
+                        closed=True,
+                        question="",
+                        answers=[]
+                    )
                 ),
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                reply_markup=await reply_markup.write(self) if reply_markup else None
             )
         )
 

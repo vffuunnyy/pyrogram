@@ -16,16 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections.abc import Callable
+from typing import Callable
 
 import pyrogram
-
 from pyrogram.filters import Filter
-from pyrogram.scaffold import Scaffold
 
 
-class OnCallbackQuery(Scaffold):
-    def on_callback_query(self=None, filters=None, group: int = 0) -> callable:
+class OnCallbackQuery:
+    def on_callback_query(
+        self=None,
+        filters=None,
+        group: int = 0
+    ) -> Callable:
         """Decorator for handling callback queries.
 
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
@@ -47,10 +49,12 @@ class OnCallbackQuery(Scaffold):
                 if not hasattr(func, "handlers"):
                     func.handlers = []
 
-                func.handlers.append((
-                    pyrogram.handlers.CallbackQueryHandler(func, self),
-                    group if filters is None else filters,
-                ))
+                func.handlers.append(
+                    (
+                        pyrogram.handlers.CallbackQueryHandler(func, self),
+                        group if filters is None else filters
+                    )
+                )
 
             return func
 

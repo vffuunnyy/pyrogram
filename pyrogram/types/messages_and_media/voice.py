@@ -16,11 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-import pyrogram
+from datetime import datetime
 
-from pyrogram import raw
+import pyrogram
+from pyrogram import raw, utils
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
-from pyrogram.types.object import Object
+from ..object import Object
 
 
 class Voice(Object):
@@ -46,8 +47,8 @@ class Voice(Object):
         file_size (``int``, *optional*):
             File size.
 
-        date (``int``, *optional*):
-            Date the voice was sent in Unix time.
+        date (:py:obj:`~datetime.datetime`, *optional*):
+            Date the voice was sent.
     """
 
     def __init__(
@@ -60,7 +61,7 @@ class Voice(Object):
         waveform: bytes = None,
         mime_type: str = None,
         file_size: int = None,
-        date: int = None,
+        date: datetime = None
     ):
         super().__init__(client)
 
@@ -73,24 +74,23 @@ class Voice(Object):
         self.date = date
 
     @staticmethod
-    def _parse(
-        client, voice: "raw.types.Document", attributes: "raw.types.DocumentAttributeAudio"
-    ) -> "Voice":
+    def _parse(client, voice: "raw.types.Document", attributes: "raw.types.DocumentAttributeAudio") -> "Voice":
         return Voice(
             file_id=FileId(
                 file_type=FileType.VOICE,
                 dc_id=voice.dc_id,
                 media_id=voice.id,
                 access_hash=voice.access_hash,
-                file_reference=voice.file_reference,
+                file_reference=voice.file_reference
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT, media_id=voice.id
+                file_unique_type=FileUniqueType.DOCUMENT,
+                media_id=voice.id
             ).encode(),
             duration=attributes.duration,
             mime_type=voice.mime_type,
             file_size=voice.size,
             waveform=attributes.waveform,
-            date=voice.date,
-            client=client,
+            date=utils.timestamp_to_datetime(voice.date),
+            client=client
         )

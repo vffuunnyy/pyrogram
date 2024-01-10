@@ -18,18 +18,23 @@
 
 import logging
 
-from pyrogram import raw, types
-from pyrogram.errors import NetworkMigrate, PhoneMigrate
-from pyrogram.scaffold import Scaffold
-from pyrogram.session import Auth, Session
-
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
+from pyrogram.errors import PhoneMigrate, NetworkMigrate
+from pyrogram.session import Session, Auth
 
 log = logging.getLogger(__name__)
 
 
-class SendCode(Scaffold):
-    async def send_code(self, phone_number: str) -> "types.SentCode":
+class SendCode:
+    async def send_code(
+        self: "pyrogram.Client",
+        phone_number: str
+    ) -> "types.SentCode":
         """Send the confirmation code to the given phone number.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             phone_number (``str``):
@@ -46,28 +51,27 @@ class SendCode(Scaffold):
 
         while True:
             try:
-                r = await self.send(
+                r = await self.invoke(
                     raw.functions.auth.SendCode(
                         phone_number=phone_number,
                         api_id=self.api_id,
                         api_hash=self.api_hash,
-                        settings=raw.types.CodeSettings(),
+                        settings=raw.types.CodeSettings()
                     )
                 )
             except (PhoneMigrate, NetworkMigrate) as e:
                 await self.session.stop()
 
-                await self.storage.dc_id(e.x)
+                await self.storage.dc_id(e.value)
                 await self.storage.auth_key(
                     await Auth(
-                        self, await self.storage.dc_id(), await self.storage.test_mode()
+                        self, await self.storage.dc_id(),
+                        await self.storage.test_mode()
                     ).create()
                 )
                 self.session = Session(
-                    self,
-                    await self.storage.dc_id(),
-                    await self.storage.auth_key(),
-                    await self.storage.test_mode(),
+                    self, await self.storage.dc_id(),
+                    await self.storage.auth_key(), await self.storage.test_mode()
                 )
 
                 await self.session.start()

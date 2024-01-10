@@ -16,10 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import BinaryIO, List, Optional, Union
+from typing import Optional, List, BinaryIO, Union
 
-from pyrogram.types.input_media.input_media import InputMedia
-from pyrogram.types.messages_and_media import MessageEntity
+from .input_media import InputMedia
+from ..messages_and_media import MessageEntity
+from ... import enums
 
 
 class InputMediaAudio(InputMedia):
@@ -28,7 +29,7 @@ class InputMediaAudio(InputMedia):
     It is intended to be used with :meth:`~pyrogram.Client.send_media_group`.
 
     Parameters:
-        media (``str``):
+        media (``str`` | ``BinaryIO``):
             Audio to send.
             Pass a file_id as string to send an audio that exists on the Telegram servers or
             pass a file path as string to upload a new audio that exists on your local machine or
@@ -45,12 +46,9 @@ class InputMediaAudio(InputMedia):
             Caption of the audio to be sent, 0-1024 characters.
             If not specified, the original caption is kept. Pass "" (empty string) to remove the caption.
 
-        parse_mode (``str``, *optional*):
+        parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
             By default, texts are parsed using both Markdown and HTML styles.
             You can combine both syntaxes together.
-            Pass "markdown" or "md" to enable Markdown-style parsing only.
-            Pass "html" to enable HTML-style parsing only.
-            Pass None to completely disable style parsing.
 
         caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
             List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
@@ -70,11 +68,11 @@ class InputMediaAudio(InputMedia):
         media: Union[str, BinaryIO],
         thumb: str = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
-        caption_entities: list[MessageEntity] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List[MessageEntity] = None,
         duration: int = 0,
         performer: str = "",
-        title: str = "",
+        title: str = ""
     ):
         super().__init__(media, caption, parse_mode, caption_entities)
 

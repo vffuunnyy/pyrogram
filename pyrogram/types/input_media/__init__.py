@@ -16,21 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram.types.input_media.input_media import InputMedia
-from pyrogram.types.input_media.input_media_animation import InputMediaAnimation
-from pyrogram.types.input_media.input_media_audio import InputMediaAudio
-from pyrogram.types.input_media.input_media_document import InputMediaDocument
-from pyrogram.types.input_media.input_media_photo import InputMediaPhoto
-from pyrogram.types.input_media.input_media_video import InputMediaVideo
-from pyrogram.types.input_media.input_phone_contact import InputPhoneContact
-
+from .input_media import InputMedia
+from .input_media_animation import InputMediaAnimation
+from .input_media_audio import InputMediaAudio
+from .input_media_document import InputMediaDocument
+from .input_media_photo import InputMediaPhoto
+from .input_media_video import InputMediaVideo
+from .input_phone_contact import InputPhoneContact
 
 __all__ = [
-    "InputMedia",
-    "InputMediaAnimation",
-    "InputMediaAudio",
-    "InputMediaDocument",
-    "InputMediaPhoto",
-    "InputMediaVideo",
-    "InputPhoneContact",
+    "InputMedia", "InputMediaAnimation", "InputMediaAudio", "InputMediaDocument", "InputMediaPhoto", "InputMediaVideo",
+    "InputPhoneContact"
 ]

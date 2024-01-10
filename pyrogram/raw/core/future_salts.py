@@ -19,9 +19,9 @@
 from io import BytesIO
 from typing import Any, List
 
-from pyrogram.raw.core.future_salt import FutureSalt
-from pyrogram.raw.core.primitives.int import Int, Long
-from pyrogram.raw.core.tl_object import TLObject
+from .future_salt import FutureSalt
+from .primitives.int import Int, Long
+from .tl_object import TLObject
 
 
 class FutureSalts(TLObject):
@@ -31,7 +31,7 @@ class FutureSalts(TLObject):
 
     QUALNAME = "FutureSalts"
 
-    def __init__(self, req_msg_id: int, now: int, salts: list[FutureSalt]):
+    def __init__(self, req_msg_id: int, now: int, salts: List[FutureSalt]):
         self.req_msg_id = req_msg_id
         self.now = now
         self.salts = salts

@@ -16,12 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional
+from typing import Optional, List
 
 import pyrogram
-
-from pyrogram import raw, types, utils
-from pyrogram.types.inline_mode.inline_query_result import InlineQueryResult
+from pyrogram import raw, types, utils, enums
+from .inline_query_result import InlineQueryResult
 
 
 class InlineQueryResultAnimation(InlineQueryResult):
@@ -36,9 +35,22 @@ class InlineQueryResultAnimation(InlineQueryResult):
             A valid URL for the animated GIF file.
             File size must not exceed 1 MB.
 
+        animation_width (``int``, *optional*)
+            Width of the animation.
+
+        animation_height (``int``, *optional*)
+            Height of the animation.
+
+        animation_duration (``int``, *optional*)
+            Duration of the animation in seconds.
+
         thumb_url (``str``, *optional*):
             URL of the static thumbnail for the result (jpeg or gif)
             Defaults to the value passed in *animation_url*.
+
+        thumb_mime_type (``str``, *optional*)
+            MIME type of the thumbnail, must be one of "image/jpeg", "image/gif", or "video/mp4".
+            Defaults to "image/jpeg".
 
         id (``str``, *optional*):
             Unique identifier for this result, 1-64 bytes.
@@ -47,18 +59,12 @@ class InlineQueryResultAnimation(InlineQueryResult):
         title (``str``, *optional*):
             Title for the result.
 
-        description (``str``, *optional*):
-            Short description of the result.
-
         caption (``str``, *optional*):
-            Caption of the photo to be sent, 0-1024 characters.
+            Caption of the animation to be sent, 0-1024 characters.
 
-        parse_mode (``str``, *optional*):
+        parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
             By default, texts are parsed using both Markdown and HTML styles.
             You can combine both syntaxes together.
-            Pass "markdown" or "md" to enable Markdown-style parsing only.
-            Pass "html" to enable HTML-style parsing only.
-            Pass None to completely disable style parsing.
 
         caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
             List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
@@ -73,20 +79,28 @@ class InlineQueryResultAnimation(InlineQueryResult):
     def __init__(
         self,
         animation_url: str,
+        animation_width: int = 0,
+        animation_height: int = 0,
+        animation_duration: int = 0,
         thumb_url: str = None,
+        thumb_mime_type: str = "image/jpeg",
         id: str = None,
         title: str = None,
         description: str = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
         reply_markup: "types.InlineKeyboardMarkup" = None,
-        input_message_content: "types.InputMessageContent" = None,
+        input_message_content: "types.InputMessageContent" = None
     ):
         super().__init__("gif", id, input_message_content, reply_markup)
 
         self.animation_url = animation_url
+        self.animation_width = animation_width
+        self.animation_height = animation_height
+        self.animation_duration = animation_duration
         self.thumb_url = thumb_url
+        self.thumb_mime_type = thumb_mime_type
         self.title = title
         self.description = description
         self.caption = caption
@@ -97,38 +111,45 @@ class InlineQueryResultAnimation(InlineQueryResult):
 
     async def write(self, client: "pyrogram.Client"):
         animation = raw.types.InputWebDocument(
-            url=self.animation_url, size=0, mime_type="image/gif", attributes=[]
+            url=self.animation_url,
+            size=0,
+            mime_type="image/gif",
+            attributes=[
+                raw.types.DocumentAttributeVideo(
+                    w=self.animation_width,
+                    h=self.animation_height,
+                    duration=self.animation_duration
+                )
+            ]
         )
 
         if self.thumb_url is None:
             thumb = animation
         else:
             thumb = raw.types.InputWebDocument(
-                url=self.thumb_url, size=0, mime_type="image/gif", attributes=[]
+                url=self.thumb_url,
+                size=0,
+                mime_type=self.thumb_mime_type,
+                attributes=[]
             )
 
-        message, entities = (
-            await utils.parse_text_entities(
-                client, self.caption, self.parse_mode, self.caption_entities
-            )
-        ).values()
+        message, entities = (await utils.parse_text_entities(
+            client, self.caption, self.parse_mode, self.caption_entities
+        )).values()
 
         return raw.types.InputBotInlineResult(
             id=self.id,
             type=self.type,
             title=self.title,
-            description=self.description,
             thumb=thumb,
             content=animation,
             send_message=(
                 self.input_message_content.write(client, self.reply_markup)
                 if self.input_message_content
                 else raw.types.InputBotInlineMessageMediaAuto(
-                    reply_markup=await self.reply_markup.write(client)
-                    if self.reply_markup
-                    else None,
+                    reply_markup=await self.reply_markup.write(client) if self.reply_markup else None,
                     message=message,
-                    entities=entities,
+                    entities=entities
                 )
-            ),
+            )
         )

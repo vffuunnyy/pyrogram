@@ -16,32 +16,36 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram.methods.users.block_user import BlockUser
-from pyrogram.methods.users.delete_profile_photos import DeleteProfilePhotos
-from pyrogram.methods.users.get_common_chats import GetCommonChats
-from pyrogram.methods.users.get_me import GetMe
-from pyrogram.methods.users.get_profile_photos import GetProfilePhotos
-from pyrogram.methods.users.get_profile_photos_count import GetProfilePhotosCount
-from pyrogram.methods.users.get_users import GetUsers
-from pyrogram.methods.users.iter_profile_photos import IterProfilePhotos
-from pyrogram.methods.users.set_profile_photo import SetProfilePhoto
-from pyrogram.methods.users.unblock_user import UnblockUser
-from pyrogram.methods.users.update_profile import UpdateProfile
-from pyrogram.methods.users.update_username import UpdateUsername
+from .block_user import BlockUser
+from .delete_profile_photos import DeleteProfilePhotos
+from .get_chat_photos import GetChatPhotos
+from .get_chat_photos_count import GetChatPhotosCount
+from .get_common_chats import GetCommonChats
+from .get_default_emoji_statuses import GetDefaultEmojiStatuses
+from .get_me import GetMe
+from .get_users import GetUsers
+from .set_emoji_status import SetEmojiStatus
+from .set_profile_photo import SetProfilePhoto
+from .set_username import SetUsername
+from .unblock_user import UnblockUser
+from .update_profile import UpdateProfile
+from .update_status import UpdateStatus
 
 
 class Users(
     BlockUser,
     GetCommonChats,
-    GetProfilePhotos,
+    GetChatPhotos,
     SetProfilePhoto,
     DeleteProfilePhotos,
     GetUsers,
     GetMe,
-    UpdateUsername,
-    GetProfilePhotosCount,
-    IterProfilePhotos,
+    SetUsername,
+    GetChatPhotosCount,
     UnblockUser,
     UpdateProfile,
+    UpdateStatus,
+    GetDefaultEmojiStatuses,
+    SetEmojiStatus
 ):
     pass

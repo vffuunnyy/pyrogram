@@ -16,16 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections.abc import Callable
+from typing import Callable
 
 import pyrogram
-
 from pyrogram.filters import Filter
-from pyrogram.scaffold import Scaffold
 
 
-class OnChatJoinRequest(Scaffold):
-    def on_chat_join_request(self=None, filters=None, group: int = 0) -> callable:
+class OnChatJoinRequest:
+    def on_chat_join_request(
+        self=None,
+        filters=None,
+        group: int = 0
+    ) -> Callable:
         """Decorator for handling chat join requests.
 
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
@@ -46,10 +48,12 @@ class OnChatJoinRequest(Scaffold):
                 if not hasattr(func, "handlers"):
                     func.handlers = []
 
-                func.handlers.append((
-                    pyrogram.handlers.ChatJoinRequestHandler(func, self),
-                    group if filters is None else filters,
-                ))
+                func.handlers.append(
+                    (
+                        pyrogram.handlers.ChatJoinRequestHandler(func, self),
+                        group if filters is None else filters
+                    )
+                )
 
             return func
 

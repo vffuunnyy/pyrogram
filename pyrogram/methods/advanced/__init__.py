@@ -16,10 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram.methods.advanced.resolve_peer import ResolvePeer
-from pyrogram.methods.advanced.save_file import SaveFile
-from pyrogram.methods.advanced.send import Send
+from .invoke import Invoke
+from .resolve_peer import ResolvePeer
+from .save_file import SaveFile
 
 
-class Advanced(ResolvePeer, SaveFile, Send):
+class Advanced(
+    Invoke,
+    ResolvePeer,
+    SaveFile
+):
     pass

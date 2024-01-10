@@ -22,15 +22,15 @@ import functools
 import hashlib
 import os
 import struct
-
 from concurrent.futures.thread import ThreadPoolExecutor
+from datetime import datetime, timezone
 from getpass import getpass
-from typing import Dict, List, Optional, Union
+from typing import Union, List, Dict, Optional
 
 import pyrogram
-
-from pyrogram import raw, types
-from pyrogram.file_id import DOCUMENT_TYPES, PHOTO_TYPES, FileId, FileType
+from pyrogram import raw, enums
+from pyrogram import types
+from pyrogram.file_id import FileId, FileType, PHOTO_TYPES, DOCUMENT_TYPES
 
 
 async def ainput(prompt: str = "", *, hide: bool = False):
@@ -41,7 +41,10 @@ async def ainput(prompt: str = "", *, hide: bool = False):
 
 
 def get_input_media_from_file_id(
-    file_id: str, expected_file_type: FileType = None
+    file_id: str,
+    expected_file_type: FileType = None,
+    ttl_seconds: int = None,
+    has_spoiler: bool = None
 ) -> Union["raw.types.InputMediaPhoto", "raw.types.InputMediaDocument"]:
     try:
         decoded = FileId.decode(file_id)
@@ -54,9 +57,7 @@ def get_input_media_from_file_id(
     file_type = decoded.file_type
 
     if expected_file_type is not None and file_type != expected_file_type:
-        raise ValueError(
-            f"Expected {expected_file_type.name}, got {file_type.name} file id instead"
-        )
+        raise ValueError(f"Expected {expected_file_type.name}, got {file_type.name} file id instead")
 
     if file_type in (FileType.THUMBNAIL, FileType.CHAT_PHOTO):
         raise ValueError(f"This file id can only be used for download: {file_id}")
@@ -66,8 +67,10 @@ def get_input_media_from_file_id(
             id=raw.types.InputPhoto(
                 id=decoded.media_id,
                 access_hash=decoded.access_hash,
-                file_reference=decoded.file_reference,
-            )
+                file_reference=decoded.file_reference
+            ),
+            spoiler=has_spoiler,
+            ttl_seconds=ttl_seconds
         )
 
     if file_type in DOCUMENT_TYPES:
@@ -75,18 +78,23 @@ def get_input_media_from_file_id(
             id=raw.types.InputDocument(
                 id=decoded.media_id,
                 access_hash=decoded.access_hash,
-                file_reference=decoded.file_reference,
-            )
+                file_reference=decoded.file_reference
+            ),
+            spoiler=has_spoiler,
+            ttl_seconds=ttl_seconds
         )
 
     raise ValueError(f"Unknown file id: {file_id}")
 
 
 async def parse_messages(
-    client, messages: "raw.types.messages.Messages", replies: int = 1
-) -> list["types.Message"]:
+    client,
+    messages: "raw.types.messages.Messages",
+    replies: int = 1
+) -> List["types.Message"]:
     users = {i.id: i for i in messages.users}
     chats = {i.id: i for i in messages.chats}
+    topics = {i.id: i for i in messages.topics} if hasattr(messages, "topics") else None
 
     if not messages.messages:
         return types.List()
@@ -94,40 +102,101 @@ async def parse_messages(
     parsed_messages = []
 
     for message in messages.messages:
-        parsed_messages.append(await types.Message._parse(client, message, users, chats, replies=0))
+        parsed_messages.append(await types.Message._parse(client, message, users, chats, topics, replies=0))
 
     if replies:
         messages_with_replies = {
-            i.id: i.reply_to.reply_to_msg_id
+            i.id: i.reply_to
             for i in messages.messages
-            if not isinstance(i, raw.types.MessageEmpty) and i.reply_to
+            if not isinstance(i, raw.types.MessageEmpty) and i.reply_to and isinstance(i.reply_to, raw.types.MessageReplyHeader)
+        }
+
+        message_reply_to_story = {
+            i.id: {'user_id': i.reply_to.user_id, 'story_id': i.reply_to.story_id}
+            for i in messages.messages
+            if not isinstance(i, raw.types.MessageEmpty) and i.reply_to and isinstance(i.reply_to, raw.types.MessageReplyStoryHeader)
         }
 
         if messages_with_replies:
             # We need a chat id, but some messages might be empty (no chat attribute available)
             # Scan until we find a message with a chat available (there must be one, because we are fetching replies)
             for m in parsed_messages:
+                if not isinstance(m, types.Message):
+                    continue
+
                 if m.chat:
                     chat_id = m.chat.id
                     break
             else:
                 chat_id = 0
 
-            reply_messages = await client.get_messages(
-                chat_id, reply_to_message_ids=messages_with_replies.keys(), replies=replies - 1
+            is_all_within_chat = not any(
+                value.reply_to_peer_id
+                for value in messages_with_replies.values()
             )
+            reply_messages: List[pyrogram.types.Message] = []
+            if is_all_within_chat:
+                # fast path: fetch all messages within the same chat
+                reply_messages = await client.get_messages(
+                    chat_id,
+                    reply_to_message_ids=messages_with_replies.keys(),
+                    replies=replies - 1
+                )
+            else:
+                # slow path: fetch all messages individually
+                for target_reply_to in messages_with_replies.values():
+                    to_be_added_msg = None
+                    the_chat_id = chat_id
+                    if target_reply_to.reply_to_peer_id:
+                        the_chat_id = get_channel_id(target_reply_to.reply_to_peer_id.channel_id)
+                    to_be_added_msg = await client.get_messages(
+                        chat_id=the_chat_id,
+                        message_ids=target_reply_to.reply_to_msg_id,
+                        replies=replies - 1
+                    )
+                    if isinstance(to_be_added_msg, list):
+                        for current_to_be_added in to_be_added_msg:
+                            reply_messages.append(current_to_be_added)
+                    elif to_be_added_msg:
+                        reply_messages.append(to_be_added_msg)
 
             for message in parsed_messages:
-                reply_id = messages_with_replies.get(message.message_id, None)
+                reply_to = messages_with_replies.get(message.id, None)
+                if not reply_to:
+                    continue
+
+                reply_id = reply_to.reply_to_msg_id
 
                 for reply in reply_messages:
-                    if reply.message_id == reply_id:
+                    if reply.id == reply_id and not reply.forum_topic_created:
                         message.reply_to_message = reply
+
+        if message_reply_to_story:
+            for m in parsed_messages:
+                if not isinstance(m, types.Message):
+                    continue
+
+                if m.chat:
+                    chat_id = m.chat.id
+                    break
+            else:
+                chat_id = 0
+
+            reply_messages = {}
+            for msg_id in message_reply_to_story:
+                reply_messages[msg_id] = await client.get_stories(
+                    message_reply_to_story[msg_id]['user_id'],
+                    message_reply_to_story[msg_id]['story_id']
+                )
+
+            for message in parsed_messages:
+                if message.id in reply_messages:
+                    message.reply_to_story = reply_messages[message.id]
 
     return types.List(parsed_messages)
 
 
-def parse_deleted_messages(client, update) -> list["types.Message"]:
+def parse_deleted_messages(client, update) -> List["types.Message"]:
     messages = update.messages
     channel_id = getattr(update, "channel_id", None)
 
@@ -136,54 +205,92 @@ def parse_deleted_messages(client, update) -> list["types.Message"]:
     for message in messages:
         parsed_messages.append(
             types.Message(
-                message_id=message,
-                chat=types.Chat(id=get_channel_id(channel_id), type="channel", client=client)
-                if channel_id is not None
-                else None,
-                client=client,
+                id=message,
+                chat=types.Chat(
+                    id=get_channel_id(channel_id),
+                    type=enums.ChatType.CHANNEL,
+                    client=client
+                ) if channel_id is not None else None,
+                client=client
             )
         )
 
     return types.List(parsed_messages)
 
 
-def unpack_inline_message_id(inline_message_id: str) -> "raw.types.InputBotInlineMessageID":
-    r = inline_message_id + "=" * (-len(inline_message_id) % 4)
-    r = struct.unpack("<iqq", base64.b64decode(r, altchars=b"-_"))
+def pack_inline_message_id(msg_id: "raw.base.InputBotInlineMessageID"):
+    if isinstance(msg_id, raw.types.InputBotInlineMessageID):
+        inline_message_id_packed = struct.pack(
+            "<iqq",
+            msg_id.dc_id,
+            msg_id.id,
+            msg_id.access_hash
+        )
+    else:
+        inline_message_id_packed = struct.pack(
+            "<iqiq",
+            msg_id.dc_id,
+            msg_id.owner_id,
+            msg_id.id,
+            msg_id.access_hash
+        )
 
-    return raw.types.InputBotInlineMessageID(dc_id=r[0], id=r[1], access_hash=r[2])
+    return base64.urlsafe_b64encode(inline_message_id_packed).decode().rstrip("=")
+
+
+def unpack_inline_message_id(inline_message_id: str) -> "raw.base.InputBotInlineMessageID":
+    padded = inline_message_id + "=" * (-len(inline_message_id) % 4)
+    decoded = base64.urlsafe_b64decode(padded)
+
+    if len(decoded) == 20:
+        unpacked = struct.unpack("<iqq", decoded)
+
+        return raw.types.InputBotInlineMessageID(
+            dc_id=unpacked[0],
+            id=unpacked[1],
+            access_hash=unpacked[2]
+        )
+    else:
+        unpacked = struct.unpack("<iqiq", decoded)
+
+        return raw.types.InputBotInlineMessageID64(
+            dc_id=unpacked[0],
+            owner_id=unpacked[1],
+            id=unpacked[2],
+            access_hash=unpacked[3]
+        )
 
 
 MIN_CHANNEL_ID = -1002147483647
 MAX_CHANNEL_ID = -1000000000000
-MIN_CHAT_ID = -2147483647
+MIN_CHAT_ID = -999999999999
 MAX_USER_ID_OLD = 2147483647
 MAX_USER_ID = 999999999999
 
 
-def get_raw_peer_id(peer: raw.base.Peer) -> Optional[int]:
+def get_raw_peer_id(peer: Union[raw.base.Peer, raw.base.InputPeer]) -> Optional[int]:
     """Get the raw peer id from a Peer object"""
-    if isinstance(peer, raw.types.PeerUser):
+    if isinstance(peer, (raw.types.PeerUser, raw.types.InputPeerUser)):
         return peer.user_id
 
-    if isinstance(peer, raw.types.PeerChat):
+    if isinstance(peer, (raw.types.PeerChat, raw.types.InputPeerChat)):
         return peer.chat_id
 
-    if isinstance(peer, raw.types.PeerChannel):
+    if isinstance(peer, (raw.types.PeerChannel, raw.types.InputPeerChannel)):
         return peer.channel_id
 
     return None
 
 
-def get_peer_id(peer: raw.base.Peer) -> int:
+def get_peer_id(peer: Union[raw.base.Peer, raw.base.InputPeer]) -> int:
     """Get the non-raw peer id from a Peer object"""
-    if isinstance(peer, raw.types.PeerUser):
+    if isinstance(peer, (raw.types.PeerUser, raw.types.InputPeerUser)):
         return peer.user_id
 
-    if isinstance(peer, raw.types.PeerChat):
+    if isinstance(peer, (raw.types.PeerChat, raw.types.InputPeerChat)):
         return -peer.chat_id
 
-    if isinstance(peer, raw.types.PeerChannel):
+    if isinstance(peer, (raw.types.PeerChannel, raw.types.InputPeerChannel)):
         return MAX_CHANNEL_ID - peer.channel_id
 
     raise ValueError(f"Peer type invalid: {peer}")
@@ -191,7 +298,7 @@ def get_peer_id(peer: raw.base.Peer) -> int:
 
 def get_peer_type(peer_id: int) -> str:
     if peer_id < 0:
-        if peer_id >= MIN_CHAT_ID:
+        if MIN_CHAT_ID <= peer_id:
             return "chat"
 
         if MIN_CHANNEL_ID <= peer_id < MAX_CHANNEL_ID:
@@ -200,6 +307,32 @@ def get_peer_type(peer_id: int) -> str:
         return "user"
 
     raise ValueError(f"Peer id invalid: {peer_id}")
+
+
+def get_reply_to(
+    reply_to_message_id: Optional[int] = None,
+    message_thread_id: Optional[int] = None,
+    reply_to_peer: Optional[raw.base.InputPeer] = None,
+    quote_text: Optional[str] = None,
+    quote_entities: Optional[List[raw.base.MessageEntity]] = None,
+    quote_offset: Optional[int] = None,
+    reply_to_story_id: Optional[int] = None
+) -> Optional[Union[raw.types.InputReplyToMessage, raw.types.InputReplyToStory]]:
+    """Get InputReply for reply_to argument"""
+    if all((reply_to_peer, reply_to_story_id)):
+        return raw.types.InputReplyToStory(user_id=reply_to_peer, story_id=reply_to_story_id)  # type: ignore[arg-type]
+
+    if any((reply_to_message_id, message_thread_id)):
+        return raw.types.InputReplyToMessage(
+            reply_to_msg_id=reply_to_message_id or message_thread_id,  # type: ignore[arg-type]
+            top_msg_id=message_thread_id if reply_to_message_id else None,
+            reply_to_peer_id=reply_to_peer,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
+            quote_offset=quote_offset,
+        )
+
+    return None
 
 
 def get_channel_id(peer_id: int) -> int:
@@ -223,7 +356,8 @@ def xor(a: bytes, b: bytes) -> bytes:
 
 
 def compute_password_hash(
-    algo: raw.types.PasswordKdfAlgoSHA256SHA256PBKDF2HMACSHA512iter100000SHA256ModPow, password: str
+    algo: raw.types.PasswordKdfAlgoSHA256SHA256PBKDF2HMACSHA512iter100000SHA256ModPow,
+    password: str
 ) -> bytes:
     hash1 = sha256(algo.salt1 + password.encode() + algo.salt1)
     hash2 = sha256(algo.salt2 + hash1 + algo.salt2)
@@ -234,7 +368,8 @@ def compute_password_hash(
 
 # noinspection PyPep8Naming
 def compute_password_check(
-    r: raw.types.account.Password, password: str
+    r: raw.types.account.Password,
+    password: str
 ) -> raw.types.InputCheckPasswordSRP:
     algo = r.current_algo
 
@@ -293,15 +428,37 @@ def compute_password_check(
 
 
 async def parse_text_entities(
-    client: "pyrogram.Client", text: str, parse_mode: str, entities: list["types.MessageEntity"]
-) -> dict[str, raw.base.MessageEntity]:
+    client: "pyrogram.Client",
+    text: str,
+    parse_mode: enums.ParseMode,
+    entities: List["types.MessageEntity"]
+) -> Dict[str, Union[str, List[raw.base.MessageEntity]]]:
     if entities:
         # Inject the client instance because parsing user mentions requires it
         for entity in entities:
             entity._client = client
 
-        text, entities = text, [await entity.write() for entity in entities]
+        text, entities = text, [await entity.write() for entity in entities] or None
     else:
         text, entities = (await client.parser.parse(text, parse_mode)).values()
 
-    return {"message": text, "entities": entities}
+    return {
+        "message": text,
+        "entities": entities
+    }
+
+
+def zero_datetime() -> datetime:
+    return datetime.fromtimestamp(0, timezone.utc)
+
+
+def max_datetime() -> datetime:
+    return datetime.fromtimestamp((1 << 31) - 1, timezone.utc)
+
+
+def timestamp_to_datetime(ts: Optional[int]) -> Optional[datetime]:
+    return datetime.fromtimestamp(ts) if ts else None
+
+
+def datetime_to_timestamp(dt: Optional[datetime]) -> Optional[int]:
+    return int(dt.timestamp()) if dt else None

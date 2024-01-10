@@ -16,14 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from re import Match
-from typing import List
+from typing import List, Match
 
 import pyrogram
-
-from pyrogram import raw, types
-from pyrogram.types.object import Object
-from pyrogram.types.update import Update
+from pyrogram import raw
+from pyrogram import types, enums
+from ..object import Object
+from ..update import Update
 
 
 class InlineQuery(Object, Update):
@@ -44,11 +43,8 @@ class InlineQuery(Object, Update):
         offset (``str``):
             Offset of the results to be returned, can be controlled by the bot.
 
-        chat_type (``str``, *optional*):
+        chat_type (:obj:`~pyrogram.enums.ChatType`, *optional*):
             Type of the chat, from which the inline query was sent.
-            Can be either "sender" for a private chat with the inline query sender, "private", "group", "supergroup", or
-            "channel". The chat type should be always known for requests sent from official clients and most
-            third-party clients, unless the request was sent from a secret chat.
 
         location (:obj:`~pyrogram.types.Location`. *optional*):
             Sender location, only for bots that request user location.
@@ -66,9 +62,9 @@ class InlineQuery(Object, Update):
         from_user: "types.User",
         query: str,
         offset: str,
-        chat_type: str,
+        chat_type: "enums.ChatType",
         location: "types.Location" = None,
-        matches: list[Match] = None,
+        matches: List[Match] = None
     ):
         super().__init__(client)
 
@@ -86,15 +82,15 @@ class InlineQuery(Object, Update):
         chat_type = None
 
         if isinstance(peer_type, raw.types.InlineQueryPeerTypeSameBotPM):
-            chat_type = "sender"
+            chat_type = enums.ChatType.BOT
         elif isinstance(peer_type, raw.types.InlineQueryPeerTypePM):
-            chat_type = "private"
+            chat_type = enums.ChatType.PRIVATE
         elif isinstance(peer_type, raw.types.InlineQueryPeerTypeChat):
-            chat_type = "group"
+            chat_type = enums.ChatType.GROUP
         elif isinstance(peer_type, raw.types.InlineQueryPeerTypeMegagroup):
-            chat_type = "supergroup"
+            chat_type = enums.ChatType.SUPERGROUP
         elif isinstance(peer_type, raw.types.InlineQueryPeerTypeBroadcast):
-            chat_type = "channel"
+            chat_type = enums.ChatType.CHANNEL
 
         return InlineQuery(
             id=str(inline_query.query_id),
@@ -103,22 +99,22 @@ class InlineQuery(Object, Update):
             offset=inline_query.offset,
             chat_type=chat_type,
             location=types.Location(
-                longitude=inline_query.geo.long, latitude=inline_query.geo.lat, client=client
-            )
-            if inline_query.geo
-            else None,
-            client=client,
+                longitude=inline_query.geo.long,
+                latitude=inline_query.geo.lat,
+                client=client
+            ) if inline_query.geo else None,
+            client=client
         )
 
     async def answer(
         self,
-        results: list["types.InlineQueryResult"],
+        results: List["types.InlineQueryResult"],
         cache_time: int = 300,
         is_gallery: bool = False,
         is_personal: bool = False,
         next_offset: str = "",
         switch_pm_text: str = "",
-        switch_pm_parameter: str = "",
+        switch_pm_parameter: str = ""
     ):
         """Bound method *answer* of :obj:`~pyrogram.types.InlineQuery`.
 
@@ -126,7 +122,7 @@ class InlineQuery(Object, Update):
 
         .. code-block:: python
 
-            client.answer_inline_query(
+            await client.answer_inline_query(
                 inline_query.id,
                 results=[...]
             )
@@ -134,7 +130,7 @@ class InlineQuery(Object, Update):
         Example:
             .. code-block:: python
 
-                inline_query.answer([...])
+                await inline_query.answer([...])
 
         Parameters:
             results (List of :obj:`~pyrogram.types.InlineQueryResult`):
@@ -181,5 +177,5 @@ class InlineQuery(Object, Update):
             is_personal=is_personal,
             next_offset=next_offset,
             switch_pm_text=switch_pm_text,
-            switch_pm_parameter=switch_pm_parameter,
+            switch_pm_parameter=switch_pm_parameter
         )

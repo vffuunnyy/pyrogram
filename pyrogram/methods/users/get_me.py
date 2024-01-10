@@ -16,13 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 
-class GetMe(Scaffold):
-    async def get_me(self) -> "types.User":
+class GetMe:
+    async def get_me(
+        self: "pyrogram.Client"
+    ) -> "types.User":
         """Get your own user identity.
+
+        .. include:: /_includes/usable-by/users-bots.rst
 
         Returns:
             :obj:`~pyrogram.types.User`: Information about the own logged in user/bot.
@@ -30,10 +35,14 @@ class GetMe(Scaffold):
         Example:
             .. code-block:: python
 
-                me = app.get_me()
+                me = await app.get_me()
                 print(me)
         """
-        r = await self.send(raw.functions.users.GetFullUser(id=raw.types.InputUserSelf()))
+        r = await self.invoke(
+            raw.functions.users.GetFullUser(
+                id=raw.types.InputUserSelf()
+            )
+        )
 
         users = {u.id: u for u in r.users}
 

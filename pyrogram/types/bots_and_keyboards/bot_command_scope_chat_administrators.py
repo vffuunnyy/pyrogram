@@ -19,9 +19,8 @@
 from typing import Union
 
 import pyrogram
-
 from pyrogram import raw
-from pyrogram.types.bots_and_keyboards.bot_command_scope import BotCommandScope
+from .bot_command_scope import BotCommandScope
 
 
 class BotCommandScopeChatAdministrators(BotCommandScope):
@@ -39,4 +38,6 @@ class BotCommandScopeChatAdministrators(BotCommandScope):
         self.chat_id = chat_id
 
     async def write(self, client: "pyrogram.Client") -> "raw.base.BotCommandScope":
-        return raw.types.BotCommandScopePeerAdmins(peer=await client.resolve_peer(self.chat_id))
+        return raw.types.BotCommandScopePeerAdmins(
+            peer=await client.resolve_peer(self.chat_id)
+        )

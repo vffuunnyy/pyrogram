@@ -16,15 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections.abc import Iterable
+from typing import Iterable
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 
-class AnswerInlineQuery(Scaffold):
+class AnswerInlineQuery:
     async def answer_inline_query(
-        self,
+        self: "pyrogram.Client",
         inline_query_id: str,
         results: Iterable["types.InlineQueryResult"],
         cache_time: int = 300,
@@ -32,11 +33,13 @@ class AnswerInlineQuery(Scaffold):
         is_personal: bool = False,
         next_offset: str = "",
         switch_pm_text: str = "",
-        switch_pm_parameter: str = "",
+        switch_pm_parameter: str = ""
     ):
         """Send answers to an inline query.
 
         A maximum of 50 results per query is allowed.
+
+        .. include:: /_includes/usable-by/bots.rst
 
         Parameters:
             inline_query_id (``str``):
@@ -85,7 +88,7 @@ class AnswerInlineQuery(Scaffold):
 
                 from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
 
-                app.answer_inline_query(
+                await app.answer_inline_query(
                     inline_query_id,
                     results=[
                         InlineQueryResultArticle(
@@ -93,7 +96,7 @@ class AnswerInlineQuery(Scaffold):
                             InputTextMessageContent("Message content"))])
         """
 
-        return await self.send(
+        return await self.invoke(
             raw.functions.messages.SetInlineBotResults(
                 query_id=int(inline_query_id),
                 results=[await r.write(self) for r in results],
@@ -102,9 +105,8 @@ class AnswerInlineQuery(Scaffold):
                 private=is_personal or None,
                 next_offset=next_offset or None,
                 switch_pm=raw.types.InlineBotSwitchPM(
-                    text=switch_pm_text, start_param=switch_pm_parameter
-                )
-                if switch_pm_text
-                else None,
+                    text=switch_pm_text,
+                    start_param=switch_pm_parameter
+                ) if switch_pm_text else None
             )
         )

@@ -19,8 +19,8 @@
 from io import BytesIO
 from typing import Any
 
-from pyrogram.raw.core.primitives.int import Int, Long
-from pyrogram.raw.core.tl_object import TLObject
+from .primitives.int import Int, Long
+from .tl_object import TLObject
 
 
 class Message(TLObject):

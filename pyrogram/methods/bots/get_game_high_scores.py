@@ -16,17 +16,23 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+from typing import Union, List
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 
-class GetGameHighScores(Scaffold):
+class GetGameHighScores:
     async def get_game_high_scores(
-        self, user_id: Union[int, str], chat_id: Union[int, str], message_id: int = None
-    ) -> list["types.GameHighScore"]:
+        self: "pyrogram.Client",
+        user_id: Union[int, str],
+        chat_id: Union[int, str],
+        message_id: int = None
+    ) -> List["types.GameHighScore"]:
         """Get data for high score tables.
+
+        .. include:: /_includes/usable-by/bots.rst
 
         Parameters:
             user_id (``int`` | ``str``):
@@ -50,16 +56,16 @@ class GetGameHighScores(Scaffold):
         Example:
             .. code-block:: python
 
-                scores = app.get_game_high_scores(user_id, chat_id, message_id)
+                scores = await app.get_game_high_scores(user_id, chat_id, message_id)
                 print(scores)
         """
         # TODO: inline_message_id
 
-        r = await self.send(
+        r = await self.invoke(
             raw.functions.messages.GetGameHighScores(
                 peer=await self.resolve_peer(chat_id),
                 id=message_id,
-                user_id=await self.resolve_peer(user_id),
+                user_id=await self.resolve_peer(user_id)
             )
         )
 

@@ -17,22 +17,22 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
-
 from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
 
 
-class DeleteBotCommands(Scaffold):
+class DeleteBotCommands:
     async def delete_bot_commands(
         self: "pyrogram.Client",
         scope: "types.BotCommandScope" = types.BotCommandScopeDefault(),
         language_code: str = "",
-    ):
+    ) -> bool:
         """Delete the list of the bot's commands for the given scope and user language.
         After deletion, higher level commands will be shown to affected users.
 
         The commands passed will overwrite any command set previously.
         This method can be used by the own bot only.
+
+        .. include:: /_includes/usable-by/bots.rst
 
         Parameters:
             scope (:obj:`~pyrogram.types.BotCommandScope`, *optional*):
@@ -51,10 +51,10 @@ class DeleteBotCommands(Scaffold):
             .. code-block:: python
 
                 # Delete commands
-                app.delete_bot_commands()
+                await app.delete_bot_commands()
         """
 
-        return await self.send(
+        return await self.invoke(
             raw.functions.bots.ResetBotCommands(
                 scope=await scope.write(self),
                 lang_code=language_code,

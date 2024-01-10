@@ -18,13 +18,21 @@
 
 from typing import List
 
-from pyrogram import raw, types, utils
-from pyrogram.scaffold import Scaffold
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
+from pyrogram import utils
 
 
-class GetNearbyChats(Scaffold):
-    async def get_nearby_chats(self, latitude: float, longitude: float) -> list["types.Chat"]:
+class GetNearbyChats:
+    async def get_nearby_chats(
+        self: "pyrogram.Client",
+        latitude: float,
+        longitude: float
+    ) -> List["types.Chat"]:
         """Get nearby chats.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             latitude (``float``):
@@ -39,13 +47,16 @@ class GetNearbyChats(Scaffold):
         Example:
             .. code-block:: python
 
-                chats = app.get_nearby_chats(51.500729, -0.124583)
+                chats = await app.get_nearby_chats(latitude, longitude)
                 print(chats)
         """
 
-        r = await self.send(
+        r = await self.invoke(
             raw.functions.contacts.GetLocated(
-                geo_point=raw.types.InputGeoPoint(lat=latitude, long=longitude)
+                geo_point=raw.types.InputGeoPoint(
+                    lat=latitude,
+                    long=longitude
+                )
             )
         )
 

@@ -19,7 +19,7 @@
 from io import BytesIO
 from typing import cast
 
-from pyrogram.raw.core.primitives.bytes import Bytes
+from .bytes import Bytes
 
 
 class String(Bytes):

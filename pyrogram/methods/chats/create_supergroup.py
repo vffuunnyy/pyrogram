@@ -15,18 +15,24 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
 
-
-class CreateSupergroup(Scaffold):
-    async def create_supergroup(self, title: str, description: str = "") -> "types.Chat":
+class CreateSupergroup:
+    async def create_supergroup(
+        self: "pyrogram.Client",
+        title: str,
+        description: str = ""
+    ) -> "types.Chat":
         """Create a new supergroup.
 
         .. note::
 
             If you want to create a new basic group, use :meth:`~pyrogram.Client.create_group` instead.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             title (``str``):
@@ -41,10 +47,14 @@ class CreateSupergroup(Scaffold):
         Example:
             .. code-block:: python
 
-                app.create_supergroup("Supergroup Title", "Supergroup Description")
+                await app.create_supergroup("Supergroup Title", "Supergroup Description")
         """
-        r = await self.send(
-            raw.functions.channels.CreateChannel(title=title, about=description, megagroup=True)
+        r = await self.invoke(
+            raw.functions.channels.CreateChannel(
+                title=title,
+                about=description,
+                megagroup=True
+            )
         )
 
         return types.Chat._parse_chat(self, r.chats[0])

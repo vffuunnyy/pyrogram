@@ -16,15 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from collections.abc import Callable
+from typing import Callable
 
 import pyrogram
 
-from pyrogram.scaffold import Scaffold
 
-
-class OnRawUpdate(Scaffold):
-    def on_raw_update(self=None, group: int = 0) -> callable:
+class OnRawUpdate:
+    def on_raw_update(
+        self=None,
+        group: int = 0
+    ) -> Callable:
         """Decorator for handling raw updates.
 
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
@@ -42,10 +43,12 @@ class OnRawUpdate(Scaffold):
                 if not hasattr(func, "handlers"):
                     func.handlers = []
 
-                func.handlers.append((
-                    pyrogram.handlers.RawUpdateHandler(func),
-                    group if self is None else group,
-                ))
+                func.handlers.append(
+                    (
+                        pyrogram.handlers.RawUpdateHandler(func),
+                        group
+                    )
+                )
 
             return func
 

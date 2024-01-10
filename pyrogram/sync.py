@@ -23,7 +23,7 @@ import threading
 
 from pyrogram import types
 from pyrogram.methods import Methods
-from pyrogram.methods.utilities import idle as idle_module
+from pyrogram.methods.utilities import idle as idle_module, compose as compose_module
 
 
 def async_to_sync(obj, name):
@@ -70,11 +70,8 @@ def async_to_sync(obj, name):
         else:
             if inspect.iscoroutine(coroutine):
                 if loop.is_running():
-
                     async def coro_wrapper():
-                        return await asyncio.wrap_future(
-                            asyncio.run_coroutine_threadsafe(coroutine, main_loop)
-                        )
+                        return await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(coroutine, main_loop))
 
                     return coro_wrapper()
                 else:
@@ -108,6 +105,9 @@ for class_name in dir(types):
     if inspect.isclass(cls):
         wrap(cls)
 
-# Special case for idle, because it's not inside Methods
+# Special case for idle and compose, because they are not inside Methods
 async_to_sync(idle_module, "idle")
-idle = idle_module.idle
+idle = getattr(idle_module, "idle")
+
+async_to_sync(compose_module, "compose")
+compose = getattr(compose_module, "compose")

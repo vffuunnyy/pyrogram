@@ -16,21 +16,23 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import pyrogram
 from pyrogram import raw
-from pyrogram.scaffold import Scaffold
 
 
-class AnswerCallbackQuery(Scaffold):
+class AnswerCallbackQuery:
     async def answer_callback_query(
-        self,
+        self: "pyrogram.Client",
         callback_query_id: str,
         text: str = None,
         show_alert: bool = None,
         url: str = None,
-        cache_time: int = 0,
+        cache_time: int = 0
     ):
         """Send answers to callback queries sent from inline keyboards.
         The answer will be displayed to the user as a notification at the top of the chat screen or as an alert.
+
+        .. include:: /_includes/usable-by/bots.rst
 
         Parameters:
             callback_query_id (``str``):
@@ -60,20 +62,20 @@ class AnswerCallbackQuery(Scaffold):
             .. code-block:: python
 
                 # Answer only (remove the spinning circles)
-                app.answer_callback_query(query_id)
+                await app.answer_callback_query(query_id)
 
                 # Answer without alert
-                app.answer_callback_query(query_id, text=text)
+                await app.answer_callback_query(query_id, text=text)
 
                 # Answer with alert
-                app.answer_callback_query(query_id, text=text, show_alert=True)
+                await app.answer_callback_query(query_id, text=text, show_alert=True)
         """
-        return await self.send(
+        return await self.invoke(
             raw.functions.messages.SetBotCallbackAnswer(
                 query_id=int(callback_query_id),
                 cache_time=cache_time,
                 alert=show_alert or None,
                 message=text or None,
-                url=url or None,
+                url=url or None
             )
         )

@@ -16,21 +16,24 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram.methods.decorators.on_callback_query import OnCallbackQuery
-from pyrogram.methods.decorators.on_chat_join_request import OnChatJoinRequest
-from pyrogram.methods.decorators.on_chat_member_updated import OnChatMemberUpdated
-from pyrogram.methods.decorators.on_chosen_inline_result import OnChosenInlineResult
-from pyrogram.methods.decorators.on_deleted_messages import OnDeletedMessages
-from pyrogram.methods.decorators.on_disconnect import OnDisconnect
-from pyrogram.methods.decorators.on_inline_query import OnInlineQuery
-from pyrogram.methods.decorators.on_message import OnMessage
-from pyrogram.methods.decorators.on_poll import OnPoll
-from pyrogram.methods.decorators.on_raw_update import OnRawUpdate
-from pyrogram.methods.decorators.on_user_status import OnUserStatus
+from .on_callback_query import OnCallbackQuery
+from .on_chat_join_request import OnChatJoinRequest
+from .on_chat_member_updated import OnChatMemberUpdated
+from .on_chosen_inline_result import OnChosenInlineResult
+from .on_deleted_messages import OnDeletedMessages
+from .on_disconnect import OnDisconnect
+from .on_edited_message import OnEditedMessage
+from .on_inline_query import OnInlineQuery
+from .on_message import OnMessage
+from .on_poll import OnPoll
+from .on_raw_update import OnRawUpdate
+from .on_user_status import OnUserStatus
+from .on_story import OnStory
 
 
 class Decorators(
     OnMessage,
+    OnEditedMessage,
     OnDeletedMessages,
     OnCallbackQuery,
     OnRawUpdate,
@@ -41,5 +44,6 @@ class Decorators(
     OnChosenInlineResult,
     OnChatMemberUpdated,
     OnChatJoinRequest,
+    OnStory
 ):
     pass

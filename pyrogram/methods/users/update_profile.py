@@ -16,17 +16,22 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import pyrogram
 from pyrogram import raw
-from pyrogram.scaffold import Scaffold
 
 
-class UpdateProfile(Scaffold):
+class UpdateProfile:
     async def update_profile(
-        self, first_name: str = None, last_name: str = None, bio: str = None
+        self: "pyrogram.Client",
+        first_name: str = None,
+        last_name: str = None,
+        bio: str = None
     ) -> bool:
         """Update your profile details such as first name, last name and bio.
 
         You can omit the parameters you don't want to change.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             first_name (``str``, *optional*):
@@ -47,19 +52,21 @@ class UpdateProfile(Scaffold):
             .. code-block:: python
 
                 # Update your first name only
-                app.update_profile(first_name="Pyrogram")
+                await app.update_profile(first_name="Pyrogram")
 
                 # Update first name and bio
-                app.update_profile(first_name="Pyrogram", bio="https://docs.pyrogram.org/")
+                await app.update_profile(first_name="Pyrogram", bio="https://docs.pyrogram.org/")
 
                 # Remove the last name
-                app.update_profile(last_name="")
+                await app.update_profile(last_name="")
         """
 
         return bool(
-            await self.send(
+            await self.invoke(
                 raw.functions.account.UpdateProfile(
-                    first_name=first_name, last_name=last_name, about=bio
+                    first_name=first_name,
+                    last_name=last_name,
+                    about=bio
                 )
             )
         )

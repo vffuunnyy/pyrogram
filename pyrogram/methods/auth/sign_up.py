@@ -18,18 +18,24 @@
 
 import logging
 
-from pyrogram import raw, types
-from pyrogram.scaffold import Scaffold
-
+import pyrogram
+from pyrogram import raw
+from pyrogram import types
 
 log = logging.getLogger(__name__)
 
 
-class SignUp(Scaffold):
+class SignUp:
     async def sign_up(
-        self, phone_number: str, phone_code_hash: str, first_name: str, last_name: str = ""
+        self: "pyrogram.Client",
+        phone_number: str,
+        phone_code_hash: str,
+        first_name: str,
+        last_name: str = ""
     ) -> "types.User":
         """Register a new user in Telegram.
+
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             phone_number (``str``):
@@ -52,12 +58,12 @@ class SignUp(Scaffold):
         """
         phone_number = phone_number.strip(" +")
 
-        r = await self.send(
+        r = await self.invoke(
             raw.functions.auth.SignUp(
                 phone_number=phone_number,
                 first_name=first_name,
                 last_name=last_name,
-                phone_code_hash=phone_code_hash,
+                phone_code_hash=phone_code_hash
             )
         )
 

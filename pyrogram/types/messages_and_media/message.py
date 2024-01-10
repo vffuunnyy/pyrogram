@@ -17,19 +17,18 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-
+from datetime import datetime
 from functools import partial
-from re import Match
-from typing import BinaryIO, List, Optional, Union
+from typing import List, Match, Union, BinaryIO, Optional, Callable
 
 import pyrogram
-
-from pyrogram import raw, types, utils
-from pyrogram.errors import MessageIdsEmpty, PeerIdInvalid
-from pyrogram.parser import Parser, utils as parser_utils
-from pyrogram.types.object import Object
-from pyrogram.types.update import Update
-
+from pyrogram import raw, enums
+from pyrogram import types
+from pyrogram import utils
+from pyrogram.errors import MessageIdsEmpty, PeerIdInvalid, ChannelPrivate, BotMethodInvalid, ChannelForumMissing
+from pyrogram.parser import utils as parser_utils, Parser
+from ..object import Object
+from ..update import Update
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +60,7 @@ class Message(Object, Update):
     """A message.
 
     Parameters:
-        message_id (``int``):
+        id (``int``):
             Unique message identifier inside this chat.
 
         from_user (:obj:`~pyrogram.types.User`, *optional*):
@@ -73,11 +72,14 @@ class Message(Object, Update):
             The supergroup itself for messages from anonymous group administrators.
             The linked channel for messages automatically forwarded to the discussion group.
 
-        date (``int``, *optional*):
-            Date the message was sent in Unix time.
+        date (:py:obj:`~datetime.datetime`, *optional*):
+            Date the message was sent.
 
         chat (:obj:`~pyrogram.types.Chat`, *optional*):
             Conversation the message belongs to.
+
+        topic (:obj:`~pyrogram.types.ForumTopic`, *optional*):
+            Topic the message belongs to.
 
         forward_from (:obj:`~pyrogram.types.User`, *optional*):
             For forwarded messages, sender of the original message.
@@ -94,11 +96,21 @@ class Message(Object, Update):
         forward_signature (``str``, *optional*):
             For messages forwarded from channels, signature of the post author if present.
 
-        forward_date (``int``, *optional*):
-            For forwarded messages, date the original message was sent in Unix time.
+        forward_date (:py:obj:`~datetime.datetime`, *optional*):
+            For forwarded messages, date the original message was sent.
+
+        message_thread_id (``int``, *optional*):
+            Unique identifier of a message thread to which the message belongs.
+            For supergroups only.
 
         reply_to_message_id (``int``, *optional*):
             The id of the message which this message directly replied to.
+
+        reply_to_story_id (``int``, *optional*):
+            The id of the story which this message directly replied to.
+
+        reply_to_story_user_id (``int``, *optional*):
+            The id of the story sender which this message directly replied to.
 
         reply_to_top_message_id (``int``, *optional*):
             The id of the first message which started this message thread.
@@ -107,6 +119,9 @@ class Message(Object, Update):
             For replies, the original message. Note that the Message object in this field will not contain
             further reply_to_message fields even if it itself is a reply.
 
+        reply_to_story (:obj:`~pyrogram.types.Story`, *optional*):
+            For replies, the original story.
+
         mentioned (``bool``, *optional*):
             The message contains a mention.
 
@@ -114,34 +129,49 @@ class Message(Object, Update):
             The message is empty.
             A message can be empty in case it was deleted or you tried to retrieve a message that doesn't exist yet.
 
-        service (``str``, *optional*):
-            The message is a service message. This field will contain the name of the service message.
-            A service message has one and only one of these fields set: new_chat_members, left_chat_member,
-            new_chat_title, new_chat_photo, delete_chat_photo, group_chat_created, channel_chat_created,
-            migrate_to_chat_id, migrate_from_chat_id, pinned_message, game_high_score, voice_chat_started,
-            voice_chat_ended, voice_chat_scheduled, voice_chat_members_invited.
+        service (:obj:`~pyrogram.enums.MessageServiceType`, *optional*):
+            The message is a service message.
+            This field will contain the enumeration type of the service message.
+            You can use ``service = getattr(message, message.service.value)`` to access the service message.
 
-        media (``str``, *optional*):
-            The message is a media message. This field will contain the name of the media message.
-            A media message has one and only one of these fields set: audio, document, photo, sticker, video, animation,
-            voice, video_note, contact, location, venue, poll, web_page, dice, game.
+        media (:obj:`~pyrogram.enums.MessageMediaType`, *optional*):
+            The message is a media message.
+            This field will contain the enumeration type of the media message.
+            You can use ``media = getattr(message, message.media.value)`` to access the media message.
 
-        edit_date (``int``, *optional*):
-            Date the message was last edited in Unix time.
+        invert_media (``bool``, *optional*):
+            If True, link preview will be shown above the message text.
+            Otherwise, the link preview will be shown below the message text.
 
-        media_group_id (``str``, *optional*):
+        edit_date (:py:obj:`~datetime.datetime`, *optional*):
+            Date the message was last edited.
+
+        edit_hidden (``bool``, *optional*):
+            The message shown as not modified.
+            A message can be not modified in case it has received a reaction.
+
+        media_group_id (``int``, *optional*):
             The unique identifier of a media message group this message belongs to.
 
         author_signature (``str``, *optional*):
             Signature of the post author for messages in channels, or the custom title of an anonymous group
             administrator.
 
-        has_protected_content (``str``, *optional*):
+        has_protected_content (``bool``, *optional*):
             True, if the message can't be forwarded.
+
+        has_media_spoiler (``bool``, *optional*):
+            True, if the message media is covered by a spoiler animation.
 
         text (``str``, *optional*):
             For text messages, the actual UTF-8 text of the message, 0-4096 characters.
             If the message contains entities (bold, italic, ...) you can access *text.markdown* or
+            *text.html* to get the marked up message text. In case there is no entity, the fields
+            will contain the same text as *text*.
+
+        quote_text (``str``, *optional*):
+            For quote messages, the actual UTF-8 text of the message, 0-4096 characters.
+            If the quote contains entities (bold, italic, ...) you can access *text.markdown* or
             *text.html* to get the marked up message text. In case there is no entity, the fields
             will contain the same text as *text*.
 
@@ -151,6 +181,9 @@ class Message(Object, Update):
         caption_entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
             For messages with a caption, special entities like usernames, URLs, bot commands, etc. that appear
             in the caption.
+
+        quote_entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+            For quote messages, special entities like usernames, URLs, bot commands, etc. that appear in the text.
 
         audio (:obj:`~pyrogram.types.Audio`, *optional*):
             Message is an audio file, information about the file.
@@ -169,6 +202,12 @@ class Message(Object, Update):
 
         game (:obj:`~pyrogram.types.Game`, *optional*):
             Message is a game, information about the game.
+
+        giveaway (:obj:`~pyrogram.types.Giveaway`, *optional*):
+            Message is a giveaway, information about the giveaway.
+
+        story (:obj:`~pyrogram.types.Story`, *optional*):
+            Message is a story, information about the story.
 
         video (:obj:`~pyrogram.types.Video`, *optional*):
             Message is a video, information about the video.
@@ -258,6 +297,9 @@ class Message(Object, Update):
         views (``int``, *optional*):
             Channel post views.
 
+        forwards (``int``, *optional*):
+            Channel post forwards.
+
         via_bot (:obj:`~pyrogram.types.User`):
             The information of the bot that generated the message from an inline query of a user.
 
@@ -266,6 +308,9 @@ class Message(Object, Update):
             Messages received from other chats are incoming (*outgoing* is False).
             Messages sent from yourself to other chats are outgoing (*outgoing* is True).
             An exception is made for your own personal chat; messages sent there will be incoming.
+
+        quote (``bool``, *optional*):
+            The message contains a quote.
 
         matches (List of regex Matches, *optional*):
             A list containing all `Match Objects <https://docs.python.org/3/library/re.html#match-objects>`_ that match
@@ -276,17 +321,44 @@ class Message(Object, Update):
             E.g.: "/start 1 2 3" would produce ["start", "1", "2", "3"].
             Only applicable when using :obj:`~pyrogram.filters.command`.
 
-        voice_chat_scheduled (:obj:`~pyrogram.types.VoiceChatScheduled`, *optional*):
+        forum_topic_created (:obj:`~pyrogram.types.ForumTopicCreated`, *optional*):
+            Service message: forum topic created
+
+        forum_topic_closed (:obj:`~pyrogram.types.ForumTopicClosed`, *optional*):
+            Service message: forum topic closed
+
+        forum_topic_reopened (:obj:`~pyrogram.types.ForumTopicReopened`, *optional*):
+            Service message: forum topic reopened
+
+        forum_topic_edited (:obj:`~pyrogram.types.ForumTopicEdited`, *optional*):
+            Service message: forum topic edited
+
+        general_topic_hidden (:obj:`~pyrogram.types.GeneralTopicHidden`, *optional*):
+            Service message: forum general topic hidden
+
+        general_topic_unhidden (:obj:`~pyrogram.types.GeneralTopicUnhidden`, *optional*):
+            Service message: forum general topic unhidden
+
+        video_chat_scheduled (:obj:`~pyrogram.types.VideoChatScheduled`, *optional*):
             Service message: voice chat scheduled.
 
-        voice_chat_started (:obj:`~pyrogram.types.VoiceChatStarted`, *optional*):
+        video_chat_started (:obj:`~pyrogram.types.VideoChatStarted`, *optional*):
             Service message: the voice chat started.
 
-        voice_chat_ended (:obj:`~pyrogram.types.VoiceChatEnded`, *optional*):
+        video_chat_ended (:obj:`~pyrogram.types.VideoChatEnded`, *optional*):
             Service message: the voice chat has ended.
 
-        voice_chat_members_invited (:obj:`~pyrogram.types.VoiceChatParticipantsInvited`, *optional*):
+        video_chat_members_invited (:obj:`~pyrogram.types.VoiceChatParticipantsInvited`, *optional*):
             Service message: new members were invited to the voice chat.
+
+        web_app_data (:obj:`~pyrogram.types.WebAppData`, *optional*):
+            Service message: web app data sent to the bot.
+
+        gift_code (:obj:`~pyrogram.types.GiftCode`, *optional*):
+            Service message: gift code information.
+
+        requested_chats (List of :obj:`~pyrogram.types.Chat`, *optional*):
+            Service message: requested chats information.
 
         reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
             Additional interface options. An object for an inline keyboard, custom reply keyboard,
@@ -305,39 +377,52 @@ class Message(Object, Update):
         self,
         *,
         client: "pyrogram.Client" = None,
-        message_id: int,
+        id: int,
         from_user: "types.User" = None,
         sender_chat: "types.Chat" = None,
-        date: int = None,
+        date: datetime = None,
         chat: "types.Chat" = None,
+        topic: "types.ForumTopic" = None,
         forward_from: "types.User" = None,
         forward_sender_name: str = None,
         forward_from_chat: "types.Chat" = None,
         forward_from_message_id: int = None,
         forward_signature: str = None,
-        forward_date: int = None,
+        forward_date: datetime = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        reply_to_story_id: int = None,
+        reply_to_story_user_id: int = None,
         reply_to_top_message_id: int = None,
         reply_to_message: "Message" = None,
+        reply_to_story: "types.Story" = None,
         mentioned: bool = None,
         empty: bool = None,
-        service: str = None,
+        service: "enums.MessageServiceType" = None,
         scheduled: bool = None,
         from_scheduled: bool = None,
-        media: str = None,
-        edit_date: int = None,
-        media_group_id: str = None,
+        media: "enums.MessageMediaType" = None,
+        invert_media: bool = None,
+        edit_date: datetime = None,
+        edit_hidden: bool = None,
+        media_group_id: int = None,
         author_signature: str = None,
         has_protected_content: bool = None,
+        has_media_spoiler: bool = None,
         text: Str = None,
-        entities: list["types.MessageEntity"] = None,
-        caption_entities: list["types.MessageEntity"] = None,
+        quote_text: Str = None,
+        entities: List["types.MessageEntity"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
+        quote_entities: List["types.MessageEntity"] = None,
         audio: "types.Audio" = None,
         document: "types.Document" = None,
         photo: "types.Photo" = None,
         sticker: "types.Sticker" = None,
         animation: "types.Animation" = None,
         game: "types.Game" = None,
+        giveaway: "types.Giveaway" = None,
+        giveaway_result: "types.GiveawayResult" = None,
+        story: "types.Story" = None,
         video: "types.Video" = None,
         voice: "types.Voice" = None,
         video_note: "types.VideoNote" = None,
@@ -348,7 +433,7 @@ class Message(Object, Update):
         web_page: "types.WebPage" = None,
         poll: "types.Poll" = None,
         dice: "types.Dice" = None,
-        new_chat_members: list["types.User"] = None,
+        new_chat_members: List["types.User"] = None,
         left_chat_member: "types.User" = None,
         new_chat_title: str = None,
         new_chat_photo: "types.Photo" = None,
@@ -361,57 +446,82 @@ class Message(Object, Update):
         pinned_message: "Message" = None,
         game_high_score: int = None,
         views: int = None,
+        forwards: int = None,
         via_bot: "types.User" = None,
         outgoing: bool = None,
-        matches: list[Match] = None,
-        command: list[str] = None,
-        voice_chat_scheduled: "types.VoiceChatScheduled" = None,
-        voice_chat_started: "types.VoiceChatStarted" = None,
-        voice_chat_ended: "types.VoiceChatEnded" = None,
-        voice_chat_members_invited: "types.VoiceChatMembersInvited" = None,
+        quote: bool = None,
+        matches: List[Match] = None,
+        command: List[str] = None,
+        forum_topic_created: "types.ForumTopicCreated" = None,
+        forum_topic_closed: "types.ForumTopicClosed" = None,
+        forum_topic_reopened: "types.ForumTopicReopened" = None,
+        forum_topic_edited: "types.ForumTopicEdited" = None,
+        general_topic_hidden: "types.GeneralTopicHidden" = None,
+        general_topic_unhidden: "types.GeneralTopicUnhidden" = None,
+        video_chat_scheduled: "types.VideoChatScheduled" = None,
+        video_chat_started: "types.VideoChatStarted" = None,
+        video_chat_ended: "types.VideoChatEnded" = None,
+        video_chat_members_invited: "types.VideoChatMembersInvited" = None,
+        web_app_data: "types.WebAppData" = None,
+        gift_code: "types.GiftCode" = None,
+        requested_chats: List["types.Chat"] = None,
+        giveaway_launched: bool = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
+            "types.ForceReply"
         ] = None,
-        reactions: list["types.Reaction"] = None,
+        reactions: List["types.Reaction"] = None
     ):
         super().__init__(client)
 
-        self.message_id = message_id
+        self.id = id
         self.from_user = from_user
         self.sender_chat = sender_chat
         self.date = date
         self.chat = chat
+        self.topic = topic
         self.forward_from = forward_from
         self.forward_sender_name = forward_sender_name
         self.forward_from_chat = forward_from_chat
         self.forward_from_message_id = forward_from_message_id
         self.forward_signature = forward_signature
         self.forward_date = forward_date
+        self.message_thread_id = message_thread_id
         self.reply_to_message_id = reply_to_message_id
+        self.reply_to_story_id = reply_to_story_id
+        self.reply_to_story_user_id = reply_to_story_user_id
         self.reply_to_top_message_id = reply_to_top_message_id
         self.reply_to_message = reply_to_message
+        self.reply_to_story = reply_to_story
         self.mentioned = mentioned
         self.empty = empty
         self.service = service
         self.scheduled = scheduled
         self.from_scheduled = from_scheduled
         self.media = media
+        self.invert_media = invert_media
         self.edit_date = edit_date
+        self.edit_hidden = edit_hidden
         self.media_group_id = media_group_id
         self.author_signature = author_signature
         self.has_protected_content = has_protected_content
+        self.has_media_spoiler = has_media_spoiler
         self.text = text
+        self.quote_text = quote_text
         self.entities = entities
         self.caption_entities = caption_entities
+        self.quote_entities = quote_entities
         self.audio = audio
         self.document = document
         self.photo = photo
         self.sticker = sticker
         self.animation = animation
         self.game = game
+        self.giveaway = giveaway
+        self.giveaway_result = giveaway_result
+        self.story = story
         self.video = video
         self.voice = voice
         self.video_note = video_note
@@ -435,43 +545,54 @@ class Message(Object, Update):
         self.pinned_message = pinned_message
         self.game_high_score = game_high_score
         self.views = views
+        self.forwards = forwards
         self.via_bot = via_bot
         self.outgoing = outgoing
+        self.quote = quote
         self.matches = matches
         self.command = command
         self.reply_markup = reply_markup
-        self.voice_chat_scheduled = voice_chat_scheduled
-        self.voice_chat_started = voice_chat_started
-        self.voice_chat_ended = voice_chat_ended
-        self.voice_chat_members_invited = voice_chat_members_invited
+        self.forum_topic_created = forum_topic_created
+        self.forum_topic_closed = forum_topic_closed
+        self.forum_topic_reopened = forum_topic_reopened
+        self.forum_topic_edited = forum_topic_edited
+        self.general_topic_hidden = general_topic_hidden
+        self.general_topic_unhidden = general_topic_unhidden
+        self.video_chat_scheduled = video_chat_scheduled
+        self.video_chat_started = video_chat_started
+        self.video_chat_ended = video_chat_ended
+        self.video_chat_members_invited = video_chat_members_invited
+        self.web_app_data = web_app_data
+        self.gift_code = gift_code
+        self.requested_chats = requested_chats
+        self.giveaway_launched = giveaway_launched
         self.reactions = reactions
 
     @staticmethod
     async def _parse(
-        client,
+        client: "pyrogram.Client",
         message: raw.base.Message,
         users: dict,
         chats: dict,
+        topics: dict = None,
         is_scheduled: bool = False,
-        replies: int = 1,
+        replies: int = 1
     ):
         if isinstance(message, raw.types.MessageEmpty):
-            return Message(message_id=message.id, empty=True, client=client)
+            return Message(id=message.id, empty=True, client=client)
 
         from_id = utils.get_raw_peer_id(message.from_id)
         peer_id = utils.get_raw_peer_id(message.peer_id)
         user_id = from_id or peer_id
 
-        if isinstance(message.from_id, raw.types.PeerUser) and isinstance(
-            message.peer_id, raw.types.PeerUser
-        ):
+        if isinstance(message.from_id, raw.types.PeerUser) and isinstance(message.peer_id, raw.types.PeerUser):
             if from_id not in users or peer_id not in users:
                 try:
-                    r = await client.send(
+                    r = await client.invoke(
                         raw.functions.users.GetUsers(
                             id=[
                                 await client.resolve_peer(from_id),
-                                await client.resolve_peer(peer_id),
+                                await client.resolve_peer(peer_id)
                             ]
                         )
                     )
@@ -481,8 +602,10 @@ class Message(Object, Update):
                     users.update({i.id: i for i in r})
 
         if isinstance(message, raw.types.MessageService):
+            message_thread_id = None
             action = message.action
 
+            text = None
             new_chat_members = None
             left_chat_member = None
             new_chat_title = None
@@ -492,125 +615,203 @@ class Message(Object, Update):
             group_chat_created = None
             channel_chat_created = None
             new_chat_photo = None
-            voice_chat_scheduled = None
-            voice_chat_started = None
-            voice_chat_ended = None
-            voice_chat_members_invited = None
+            forum_topic_created = None
+            forum_topic_closed = None
+            forum_topic_reopened = None
+            forum_topic_edited = None
+            general_topic_hidden = None
+            general_topic_unhidden = None
+            video_chat_scheduled = None
+            video_chat_started = None
+            video_chat_ended = None
+            video_chat_members_invited = None
+            web_app_data = None
+            gift_code = None
+            giveaway_launched = None
+            requested_chats = None
 
             service_type = None
 
             if isinstance(action, raw.types.MessageActionChatAddUser):
                 new_chat_members = [types.User._parse(client, users[i]) for i in action.users]
-                service_type = "new_chat_members"
+                service_type = enums.MessageServiceType.NEW_CHAT_MEMBERS
             elif isinstance(action, raw.types.MessageActionChatJoinedByLink):
-                new_chat_members = [
-                    types.User._parse(client, users[utils.get_raw_peer_id(message.from_id)])
-                ]
-                service_type = "new_chat_members"
+                new_chat_members = [types.User._parse(client, users[utils.get_raw_peer_id(message.from_id)])]
+                service_type = enums.MessageServiceType.NEW_CHAT_MEMBERS
             elif isinstance(action, raw.types.MessageActionChatDeleteUser):
                 left_chat_member = types.User._parse(client, users[action.user_id])
-                service_type = "left_chat_member"
+                service_type = enums.MessageServiceType.LEFT_CHAT_MEMBERS
             elif isinstance(action, raw.types.MessageActionChatEditTitle):
                 new_chat_title = action.title
-                service_type = "new_chat_title"
+                service_type = enums.MessageServiceType.NEW_CHAT_TITLE
             elif isinstance(action, raw.types.MessageActionChatDeletePhoto):
                 delete_chat_photo = True
-                service_type = "delete_chat_photo"
+                service_type = enums.MessageServiceType.DELETE_CHAT_PHOTO
             elif isinstance(action, raw.types.MessageActionChatMigrateTo):
                 migrate_to_chat_id = action.channel_id
-                service_type = "migrate_to_chat_id"
+                service_type = enums.MessageServiceType.MIGRATE_TO_CHAT_ID
             elif isinstance(action, raw.types.MessageActionChannelMigrateFrom):
                 migrate_from_chat_id = action.chat_id
-                service_type = "migrate_from_chat_id"
+                service_type = enums.MessageServiceType.MIGRATE_FROM_CHAT_ID
             elif isinstance(action, raw.types.MessageActionChatCreate):
                 group_chat_created = True
-                service_type = "group_chat_created"
+                service_type = enums.MessageServiceType.GROUP_CHAT_CREATED
             elif isinstance(action, raw.types.MessageActionChannelCreate):
                 channel_chat_created = True
-                service_type = "channel_chat_created"
+                service_type = enums.MessageServiceType.CHANNEL_CHAT_CREATED
             elif isinstance(action, raw.types.MessageActionChatEditPhoto):
                 new_chat_photo = types.Photo._parse(client, action.photo)
-                service_type = "new_chat_photo"
+                service_type = enums.MessageServiceType.NEW_CHAT_PHOTO
+            elif isinstance(action, raw.types.MessageActionCustomAction):
+                text = message.action.message
+                service_type = enums.MessageServiceType.CUSTOM_ACTION
+            elif isinstance(action, raw.types.MessageActionTopicCreate):
+                forum_topic_created = types.ForumTopicCreated._parse(message)
+                service_type = enums.MessageServiceType.FORUM_TOPIC_CREATED
+            elif isinstance(action, raw.types.MessageActionTopicEdit):
+                if action.title:
+                    forum_topic_edited = types.ForumTopicEdited._parse(action)
+                    service_type = enums.MessageServiceType.FORUM_TOPIC_EDITED
+                elif action.hidden:
+                    general_topic_hidden = types.GeneralTopicHidden()
+                    service_type = enums.MessageServiceType.GENERAL_TOPIC_HIDDEN
+                elif action.closed:
+                    forum_topic_closed = types.ForumTopicClosed()
+                    service_type = enums.MessageServiceType.FORUM_TOPIC_CLOSED
+                else:
+                    if hasattr(action, "hidden") and action.hidden:
+                        general_topic_unhidden = types.GeneralTopicUnhidden()
+                        service_type = enums.MessageServiceType.GENERAL_TOPIC_UNHIDDEN
+                    else:
+                        forum_topic_reopened = types.ForumTopicReopened()
+                        service_type = enums.MessageServiceType.FORUM_TOPIC_REOPENED
             elif isinstance(action, raw.types.MessageActionGroupCallScheduled):
-                voice_chat_scheduled = types.VoiceChatScheduled._parse(action)
-                service_type = "voice_chat_scheduled"
+                video_chat_scheduled = types.VideoChatScheduled._parse(action)
+                service_type = enums.MessageServiceType.VIDEO_CHAT_SCHEDULED
             elif isinstance(action, raw.types.MessageActionGroupCall):
                 if action.duration:
-                    voice_chat_ended = types.VoiceChatEnded._parse(action)
-                    service_type = "voice_chat_ended"
+                    video_chat_ended = types.VideoChatEnded._parse(action)
+                    service_type = enums.MessageServiceType.VIDEO_CHAT_ENDED
                 else:
-                    voice_chat_started = types.VoiceChatStarted()
-                    service_type = "voice_chat_started"
+                    video_chat_started = types.VideoChatStarted()
+                    service_type = enums.MessageServiceType.VIDEO_CHAT_STARTED
             elif isinstance(action, raw.types.MessageActionInviteToGroupCall):
-                voice_chat_members_invited = types.VoiceChatMembersInvited._parse(
-                    client, action, users
-                )
-                service_type = "voice_chat_members_invited"
+                video_chat_members_invited = types.VideoChatMembersInvited._parse(client, action, users)
+                service_type = enums.MessageServiceType.VIDEO_CHAT_MEMBERS_INVITED
+            elif isinstance(action, raw.types.MessageActionWebViewDataSentMe):
+                web_app_data = types.WebAppData._parse(action)
+                service_type = enums.MessageServiceType.WEB_APP_DATA
+            elif isinstance(action, raw.types.MessageActionGiveawayLaunch):
+                giveaway_launched = True
+                service_type = enums.MessageServiceType.GIVEAWAY_LAUNCH
+            elif isinstance(action, raw.types.MessageActionGiftCode):
+                gift_code = types.GiftCode._parse(client, action, chats)
+                service_type = enums.MessageServiceType.GIFT_CODE
+            elif isinstance(action, raw.types.MessageActionRequestedPeer):
+                _requested_chats = []
+
+                for requested_peer in action.peers:
+                    chat_id = utils.get_peer_id(requested_peer)
+                    peer_type = utils.get_peer_type(chat_id)
+
+                    if peer_type == "user":
+                        chat_type = enums.ChatType.PRIVATE
+                    elif peer_type == "chat":
+                        chat_type = enums.ChatType.GROUP
+                    else:
+                        chat_type = enums.ChatType.CHANNEL
+
+                    _requested_chats.append(
+                        types.Chat(
+                            id=chat_id,
+                            type=chat_type,
+                            client=client
+                        )
+                    )
+
+                requested_chats = types.List(_requested_chats) or None
+
+                service_type = enums.MessageServiceType.REQUESTED_CHAT
 
             from_user = types.User._parse(client, users.get(user_id, None))
-            sender_chat = (
-                types.Chat._parse(client, message, users, chats, is_chat=False)
-                if not from_user
-                else None
-            )
+            sender_chat = types.Chat._parse(client, message, users, chats, is_chat=False) if not from_user else None
 
             parsed_message = Message(
-                message_id=message.id,
-                date=message.date,
+                id=message.id,
+                message_thread_id=message_thread_id,
+                date=utils.timestamp_to_datetime(message.date),
                 chat=types.Chat._parse(client, message, users, chats, is_chat=True),
                 from_user=from_user,
                 sender_chat=sender_chat,
                 service=service_type,
+                text=text,
                 new_chat_members=new_chat_members,
                 left_chat_member=left_chat_member,
                 new_chat_title=new_chat_title,
                 new_chat_photo=new_chat_photo,
                 delete_chat_photo=delete_chat_photo,
-                migrate_to_chat_id=utils.get_channel_id(migrate_to_chat_id)
-                if migrate_to_chat_id
-                else None,
+                migrate_to_chat_id=utils.get_channel_id(migrate_to_chat_id) if migrate_to_chat_id else None,
                 migrate_from_chat_id=-migrate_from_chat_id if migrate_from_chat_id else None,
                 group_chat_created=group_chat_created,
                 channel_chat_created=channel_chat_created,
-                voice_chat_scheduled=voice_chat_scheduled,
-                voice_chat_started=voice_chat_started,
-                voice_chat_ended=voice_chat_ended,
-                voice_chat_members_invited=voice_chat_members_invited,
-                client=client,
+                forum_topic_created=forum_topic_created,
+                forum_topic_closed=forum_topic_closed,
+                forum_topic_reopened=forum_topic_reopened,
+                forum_topic_edited=forum_topic_edited,
+                general_topic_hidden=general_topic_hidden,
+                general_topic_unhidden=general_topic_unhidden,
+                video_chat_scheduled=video_chat_scheduled,
+                video_chat_started=video_chat_started,
+                video_chat_ended=video_chat_ended,
+                video_chat_members_invited=video_chat_members_invited,
+                web_app_data=web_app_data,
+                giveaway_launched=giveaway_launched,
+                gift_code=gift_code,
+                requested_chats=requested_chats,
+                client=client
                 # TODO: supergroup_chat_created
             )
 
             if isinstance(action, raw.types.MessageActionPinMessage):
                 try:
                     parsed_message.pinned_message = await client.get_messages(
-                        parsed_message.chat.id, reply_to_message_ids=message.id, replies=0
+                        parsed_message.chat.id,
+                        reply_to_message_ids=message.id,
+                        replies=0
                     )
 
-                    parsed_message.service = "pinned_message"
+                    parsed_message.service = enums.MessageServiceType.PINNED_MESSAGE
                 except MessageIdsEmpty:
                     pass
 
             if isinstance(action, raw.types.MessageActionGameScore):
-                parsed_message.game_high_score = types.GameHighScore._parse_action(
-                    client, message, users
-                )
+                parsed_message.game_high_score = types.GameHighScore._parse_action(client, message, users)
 
                 if message.reply_to and replies:
                     try:
                         parsed_message.reply_to_message = await client.get_messages(
-                            parsed_message.chat.id, reply_to_message_ids=message.id, replies=0
+                            parsed_message.chat.id,
+                            reply_to_message_ids=message.id,
+                            replies=0
                         )
 
-                        parsed_message.service = "game_high_score"
+                        parsed_message.service = enums.MessageServiceType.GAME_HIGH_SCORE
                     except MessageIdsEmpty:
                         pass
+
+            client.message_cache[(parsed_message.chat.id, parsed_message.id)] = parsed_message
+
+            if message.reply_to and message.reply_to.forum_topic:
+                if message.reply_to.reply_to_top_id:
+                    parsed_message.message_thread_id = message.reply_to.reply_to_top_id
+                else:
+                    parsed_message.message_thread_id = message.reply_to.reply_to_msg_id
 
             return parsed_message
 
         if isinstance(message, raw.types.Message):
-            entities = [
-                types.MessageEntity._parse(client, entity, users) for entity in message.entities
-            ]
+            message_thread_id = None
+            entities = [types.MessageEntity._parse(client, entity, users) for entity in message.entities]
             entities = types.List(filter(lambda x: x is not None, entities))
 
             forward_from = None
@@ -623,7 +824,7 @@ class Message(Object, Update):
             forward_header = message.fwd_from  # type: raw.types.MessageFwdHeader
 
             if forward_header:
-                forward_date = forward_header.date
+                forward_date = utils.timestamp_to_datetime(forward_header.date)
 
                 if forward_header.from_id:
                     raw_peer_id = utils.get_raw_peer_id(forward_header.from_id)
@@ -632,9 +833,7 @@ class Message(Object, Update):
                     if peer_id > 0:
                         forward_from = types.User._parse(client, users[raw_peer_id])
                     else:
-                        forward_from_chat = types.Chat._parse_channel_chat(
-                            client, chats[raw_peer_id]
-                        )
+                        forward_from_chat = types.Chat._parse_channel_chat(client, chats[raw_peer_id])
                         forward_from_message_id = forward_header.channel_post
                         forward_signature = forward_header.post_author
                 elif forward_header.from_name:
@@ -645,6 +844,9 @@ class Message(Object, Update):
             contact = None
             venue = None
             game = None
+            giveaway = None
+            giveaway_result = None
+            story = None
             audio = None
             voice = None
             animation = None
@@ -658,23 +860,41 @@ class Message(Object, Update):
 
             media = message.media
             media_type = None
+            has_media_spoiler = None
 
             if media:
                 if isinstance(media, raw.types.MessageMediaPhoto):
                     photo = types.Photo._parse(client, media.photo, media.ttl_seconds)
-                    media_type = "photo"
+                    media_type = enums.MessageMediaType.PHOTO
+                    has_media_spoiler = media.spoiler
                 elif isinstance(media, raw.types.MessageMediaGeo):
                     location = types.Location._parse(client, media.geo)
-                    media_type = "location"
+                    media_type = enums.MessageMediaType.LOCATION
                 elif isinstance(media, raw.types.MessageMediaContact):
                     contact = types.Contact._parse(client, media)
-                    media_type = "contact"
+                    media_type = enums.MessageMediaType.CONTACT
                 elif isinstance(media, raw.types.MessageMediaVenue):
                     venue = types.Venue._parse(client, media)
-                    media_type = "venue"
+                    media_type = enums.MessageMediaType.VENUE
                 elif isinstance(media, raw.types.MessageMediaGame):
                     game = types.Game._parse(client, message)
-                    media_type = "game"
+                    media_type = enums.MessageMediaType.GAME
+                elif isinstance(media, raw.types.MessageMediaGiveaway):
+                    giveaway = types.Giveaway._parse(client, media, chats)
+                    media_type = enums.MessageMediaType.GIVEAWAY
+                elif isinstance(media, raw.types.MessageMediaGiveawayResults):
+                    giveaway_result = await types.GiveawayResult._parse(client, media, users, chats)
+                    media_type = enums.MessageMediaType.GIVEAWAY_RESULT
+                elif isinstance(media, raw.types.MessageMediaStory):
+                    if media.story:
+                        story = await types.Story._parse(client, media.story, users, chats, media.peer)
+                    else:
+                        try:
+                            story = await client.get_stories(utils.get_peer_id(media.peer), media.id)
+                        except (BotMethodInvalid, ChannelPrivate):
+                            story = await types.Story._parse(client, media, users, chats, media.peer)
+
+                    media_type = enums.MessageMediaType.STORY
                 elif isinstance(media, raw.types.MessageMediaDocument):
                     doc = media.document
 
@@ -682,63 +902,60 @@ class Message(Object, Update):
                         attributes = {type(i): i for i in doc.attributes}
 
                         file_name = getattr(
-                            attributes.get(raw.types.DocumentAttributeFilename, None),
-                            "file_name",
-                            None,
+                            attributes.get(
+                                raw.types.DocumentAttributeFilename, None
+                            ), "file_name", None
                         )
 
-                        if raw.types.DocumentAttributeAudio in attributes:
-                            audio_attributes = attributes[raw.types.DocumentAttributeAudio]
-
-                            if audio_attributes.voice:
-                                voice = types.Voice._parse(client, doc, audio_attributes)
-                                media_type = "voice"
-                            else:
-                                audio = types.Audio._parse(client, doc, audio_attributes, file_name)
-                                media_type = "audio"
-                        elif raw.types.DocumentAttributeAnimated in attributes:
-                            video_attributes = attributes.get(
-                                raw.types.DocumentAttributeVideo, None
-                            )
-                            animation = types.Animation._parse(
-                                client, doc, video_attributes, file_name
-                            )
-                            media_type = "animation"
+                        if raw.types.DocumentAttributeAnimated in attributes:
+                            video_attributes = attributes.get(raw.types.DocumentAttributeVideo, None)
+                            animation = types.Animation._parse(client, doc, video_attributes, file_name)
+                            media_type = enums.MessageMediaType.ANIMATION
+                            has_media_spoiler = media.spoiler
                         elif raw.types.DocumentAttributeSticker in attributes:
-                            sticker = await types.Sticker._parse(
-                                client,
-                                doc,
-                                attributes.get(raw.types.DocumentAttributeImageSize, None),
-                                attributes[raw.types.DocumentAttributeSticker],
-                                file_name,
-                            )
-                            media_type = "sticker"
+                            sticker = await types.Sticker._parse(client, doc, attributes)
+                            media_type = enums.MessageMediaType.STICKER
                         elif raw.types.DocumentAttributeVideo in attributes:
                             video_attributes = attributes[raw.types.DocumentAttributeVideo]
 
                             if video_attributes.round_message:
                                 video_note = types.VideoNote._parse(client, doc, video_attributes)
-                                media_type = "video_note"
+                                media_type = enums.MessageMediaType.VIDEO_NOTE
                             else:
-                                video = types.Video._parse(
-                                    client, doc, video_attributes, file_name, media.ttl_seconds
-                                )
-                                media_type = "video"
+                                video = types.Video._parse(client, doc, video_attributes, file_name, media.ttl_seconds)
+                                media_type = enums.MessageMediaType.VIDEO
+                                has_media_spoiler = media.spoiler
+                        elif raw.types.DocumentAttributeAudio in attributes:
+                            audio_attributes = attributes[raw.types.DocumentAttributeAudio]
+
+                            if audio_attributes.voice:
+                                voice = types.Voice._parse(client, doc, audio_attributes)
+                                media_type = enums.MessageMediaType.VOICE
+                            else:
+                                audio = types.Audio._parse(client, doc, audio_attributes, file_name)
+                                media_type = enums.MessageMediaType.AUDIO
                         else:
                             document = types.Document._parse(client, doc, file_name)
-                            media_type = "document"
+                            media_type = enums.MessageMediaType.DOCUMENT
                 elif isinstance(media, raw.types.MessageMediaWebPage):
                     if isinstance(media.webpage, raw.types.WebPage):
-                        web_page = types.WebPage._parse(client, media.webpage)
-                        media_type = "web_page"
+                        web_page = types.WebPage._parse(
+                            client,
+                            media.webpage,
+                            getattr(media, "force_large_media", None),
+                            getattr(media, "force_small_media", None),
+                            getattr(media, "manual", None),
+                            getattr(media, "safe", None)
+                        )
+                        media_type = enums.MessageMediaType.WEB_PAGE
                     else:
                         media = None
                 elif isinstance(media, raw.types.MessageMediaPoll):
                     poll = types.Poll._parse(client, media)
-                    media_type = "poll"
+                    media_type = enums.MessageMediaType.POLL
                 elif isinstance(media, raw.types.MessageMediaDice):
                     dice = types.Dice._parse(client, media)
-                    media_type = "dice"
+                    media_type = enums.MessageMediaType.DICE
                 else:
                     media = None
 
@@ -757,24 +974,14 @@ class Message(Object, Update):
                     reply_markup = None
 
             from_user = types.User._parse(client, users.get(user_id, None))
-            sender_chat = (
-                types.Chat._parse(client, message, users, chats, is_chat=False)
-                if not from_user
-                else None
-            )
+            sender_chat = types.Chat._parse(client, message, users, chats, is_chat=False) if not from_user else None
 
-            reactions = (
-                [
-                    types.Reaction(emoji=r.reaction, count=r.count, chosen=r.chosen)
-                    for r in message.reactions.results
-                ]
-                if message.reactions
-                else None
-            )
+            reactions = types.MessageReactions._parse(client, message.reactions)
 
             parsed_message = Message(
-                message_id=message.id,
-                date=message.date,
+                id=message.id,
+                message_thread_id=message_thread_id,
+                date=utils.timestamp_to_datetime(message.date),
                 chat=types.Chat._parse(client, message, users, chats, is_chat=True),
                 from_user=from_user,
                 sender_chat=sender_chat,
@@ -788,12 +995,19 @@ class Message(Object, Update):
                     if media is not None and web_page is None
                     else None
                 ),
-                entities=(entities or None if media is None or web_page is not None else None),
+                entities=(
+                    entities or None
+                    if media is None or web_page is not None
+                    else None
+                ),
                 caption_entities=(
-                    entities or None if media is not None and web_page is None else None
+                    entities or None
+                    if media is not None and web_page is None
+                    else None
                 ),
                 author_signature=message.post_author,
                 has_protected_content=message.noforwards,
+                has_media_spoiler=has_media_spoiler,
                 forward_from=forward_from,
                 forward_sender_name=forward_sender_name,
                 forward_from_chat=forward_from_chat,
@@ -804,7 +1018,9 @@ class Message(Object, Update):
                 scheduled=is_scheduled,
                 from_scheduled=message.from_scheduled,
                 media=media_type,
-                edit_date=message.edit_date,
+                invert_media=getattr(message, "invert_media", None),
+                edit_date=utils.timestamp_to_datetime(message.edit_date),
+                edit_hidden=message.edit_hide,
                 media_group_id=message.grouped_id,
                 photo=photo,
                 location=location,
@@ -814,6 +1030,9 @@ class Message(Object, Update):
                 voice=voice,
                 animation=animation,
                 game=game,
+                giveaway=giveaway,
+                giveaway_result=giveaway_result,
+                story=story,
                 video=video,
                 video_note=video_note,
                 sticker=sticker,
@@ -822,52 +1041,130 @@ class Message(Object, Update):
                 poll=poll,
                 dice=dice,
                 views=message.views,
+                forwards=message.forwards,
                 via_bot=types.User._parse(client, users.get(message.via_bot_id, None)),
                 outgoing=message.out,
                 reply_markup=reply_markup,
                 reactions=reactions,
-                client=client,
+                client=client
             )
 
-            if message.reply_to:
-                if replies:
-                    try:
-                        parsed_message.reply_to_message = await client.get_messages(
-                            parsed_message.chat.id,
-                            reply_to_message_ids=message.id,
-                            replies=replies - 1,
-                        )
-                    except MessageIdsEmpty:
-                        pass
+            if any((isinstance(entity, raw.types.MessageEntityBlockquote) for entity in message.entities)):
+                parsed_message.quote = True
 
-                parsed_message.reply_to_message_id = message.reply_to.reply_to_msg_id
-                parsed_message.reply_to_top_message_id = message.reply_to.reply_to_top_id
+            if message.reply_to:
+                if isinstance(message.reply_to, raw.types.MessageReplyHeader):
+                    if message.reply_to.forum_topic:
+                        if message.reply_to.reply_to_top_id:
+                            thread_id = message.reply_to.reply_to_top_id
+                            parsed_message.reply_to_message_id = message.reply_to.reply_to_msg_id
+                        else:
+                            thread_id = message.reply_to.reply_to_msg_id
+
+                        parsed_message.message_thread_id = thread_id
+
+                        if topics:
+                            parsed_message.topic = types.ForumTopic._parse(client, topics[thread_id], users=users, chats=chats)
+                    else:
+                        if message.reply_to.quote:
+                            quote_entities = [types.MessageEntity._parse(client, entity, users) for entity in message.reply_to.quote_entities]
+                            quote_entities = types.List(filter(lambda x: x is not None, quote_entities))
+
+                            parsed_message.quote = message.reply_to.quote
+                            parsed_message.quote_text = (
+                                Str(message.reply_to.quote_text).init(quote_entities) or None
+                                if media is None or web_page is not None
+                                else None
+                            )
+                            parsed_message.quote_entities = (
+                                quote_entities or None
+                                if media is None or web_page is not None
+                                else None
+                            )
+
+                        parsed_message.reply_to_message_id = message.reply_to.reply_to_msg_id
+                        parsed_message.reply_to_top_message_id = message.reply_to.reply_to_top_id
+                else:
+                    parsed_message.reply_to_story_id = message.reply_to.story_id
+                    parsed_message.reply_to_story_user_id = message.reply_to.user_id
+
+                if replies:
+                    if parsed_message.reply_to_message_id:
+                        is_cross_chat = getattr(message.reply_to, "reply_to_peer_id", None) and getattr(message.reply_to.reply_to_peer_id, "channel_id", None)
+
+                        if is_cross_chat:
+                            key = (utils.get_channel_id(message.reply_to.reply_to_peer_id.channel_id), message.reply_to.reply_to_msg_id)
+                            reply_to_params = {"chat_id": key[0], 'message_ids': key[1]}
+                        else:
+                            key = (parsed_message.chat.id, parsed_message.reply_to_message_id)
+                            reply_to_params = {'chat_id': key[0], 'reply_to_message_ids': message.id}
+
+                        try:
+                            reply_to_message = client.message_cache[key]
+
+                            if not reply_to_message:
+                                try:
+                                    reply_to_message = await client.get_messages(
+                                        replies=replies - 1,
+                                        **reply_to_params
+                                    )
+                                except ChannelPrivate:
+                                    pass
+                            if reply_to_message and not reply_to_message.forum_topic_created:
+                                parsed_message.reply_to_message = reply_to_message
+                        except MessageIdsEmpty:
+                            pass
+                    elif parsed_message.reply_to_story_id:
+                        try:
+                            reply_to_story = await client.get_stories(
+                                parsed_message.reply_to_story_user_id,
+                                parsed_message.reply_to_story_id
+                            )
+                        except BotMethodInvalid:
+                            pass
+                        else:
+                            parsed_message.reply_to_story = reply_to_story
+
+            if parsed_message.topic is None and parsed_message.chat.is_forum:
+                try:
+                    parsed_message.topic = await client.get_forum_topics_by_id(
+                        chat_id=parsed_message.chat.id,
+                        topic_ids=parsed_message.message_thread_id or 1
+                    )
+                except (BotMethodInvalid, ChannelForumMissing):
+                    pass
+
+            if not parsed_message.poll:  # Do not cache poll messages
+                client.message_cache[(parsed_message.chat.id, parsed_message.id)] = parsed_message
 
             return parsed_message
 
     @property
     def link(self) -> str:
-        if self.chat.type in ("group", "supergroup", "channel") and self.chat.username:
-            return f"https://t.me/{self.chat.username}/{self.message_id}"
+        if (
+            self.chat.type in (enums.ChatType.GROUP, enums.ChatType.SUPERGROUP, enums.ChatType.CHANNEL)
+            and self.chat.username
+        ):
+            return f"https://t.me/{self.chat.username}/{self.id}"
         else:
-            return f"https://t.me/c/{utils.get_channel_id(self.chat.id)}/{self.message_id}"
+            return f"https://t.me/c/{utils.get_channel_id(self.chat.id)}/{self.id}"
 
-    async def get_media_group(self) -> list["types.Message"]:
+    async def get_media_group(self) -> List["types.Message"]:
         """Bound method *get_media_group* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            client.get_media_group(
+            await client.get_media_group(
                 chat_id=message.chat.id,
-                message_id=message.message_id
+                message_id=message.id
             )
 
         Example:
             .. code-block:: python
 
-                message.get_media_group()
+                await message.get_media_group()
 
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of messages of the media group is returned.
@@ -876,20 +1173,27 @@ class Message(Object, Update):
             ValueError: In case the passed message id doesn't belong to a media group.
         """
 
-        return await self._client.get_media_group(chat_id=self.chat.id, message_id=self.message_id)
+        return await self._client.get_media_group(
+            chat_id=self.chat.id,
+            message_id=self.id
+        )
 
     async def reply_text(
         self,
         text: str,
         quote: bool = None,
-        parse_mode: Optional[str] = object,
-        entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        entities: List["types.MessageEntity"] = None,
         disable_web_page_preview: bool = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
+        invert_media: bool = None,
         reply_to_message_id: int = None,
-        schedule_date: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
+        schedule_date: datetime = None,
         protect_content: bool = None,
-        reply_markup=None,
+        reply_markup=None
     ) -> "Message":
         """Bound method *reply_text* of :obj:`~pyrogram.types.Message`.
 
@@ -899,16 +1203,16 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_message(
+            await client.send_message(
                 chat_id=message.chat.id,
                 text="hello",
-                reply_to_message_id=message.message_id
+                reply_to_message_id=message.id
             )
 
         Example:
             .. code-block:: python
 
-                message.reply_text("hello", quote=True)
+                await message.reply_text("hello", quote=True)
 
         Parameters:
             text (``str``):
@@ -919,12 +1223,9 @@ class Message(Object, Update):
                 If *reply_to_message_id* is passed, this parameter will be ignored.
                 Defaults to ``True`` in group chats and ``False`` in private chats.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in message text, which can be specified instead of *parse_mode*.
@@ -936,11 +1237,25 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
+            invert_media (``bool``, *optional*):
+                If True, link preview will be shown above the message text.
+                Otherwise, the link preview will be shown below the message text.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
 
-            schedule_date (``int``, *optional*):
-                Date when the message will be automatically sent. Unix time.
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
 
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
@@ -956,10 +1271,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_message(
             chat_id=self.chat.id,
@@ -968,10 +1286,14 @@ class Message(Object, Update):
             entities=entities,
             disable_web_page_preview=disable_web_page_preview,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
+            invert_media=invert_media,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
             schedule_date=schedule_date,
             protect_content=protect_content,
-            reply_markup=reply_markup,
+            reply_markup=reply_markup
         )
 
     reply = reply_text
@@ -981,8 +1303,9 @@ class Message(Object, Update):
         animation: Union[str, BinaryIO],
         quote: bool = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
+        has_spoiler: bool = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
@@ -992,11 +1315,14 @@ class Message(Object, Update):
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
+            "types.ForceReply"
         ] = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
-        progress: callable = None,
-        progress_args: tuple = (),
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
+        progress: Callable = None,
+        progress_args: tuple = ()
     ) -> "Message":
         """Bound method *reply_animation* :obj:`~pyrogram.types.Message`.
 
@@ -1004,7 +1330,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_animation(
+            await client.send_animation(
                 chat_id=message.chat.id,
                 animation=animation
             )
@@ -1012,7 +1338,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_animation(animation)
+                await message.reply_animation(animation)
 
         Parameters:
             animation (``str``):
@@ -1029,15 +1355,15 @@ class Message(Object, Update):
             caption (``str``, *optional*):
                 Animation caption, 0-1024 characters.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
+
+            has_spoiler (``bool``, *optional*):
+                Pass True if the animation needs to be covered with a spoiler animation.
 
             duration (``int``, *optional*):
                 Duration of sent animation in seconds.
@@ -1058,14 +1384,24 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            progress (``callable``, *optional*):
+            progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
                 The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
                 detailed description) and will be called back each time a new file chunk has been successfully
@@ -1096,10 +1432,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_animation(
             chat_id=self.chat.id,
@@ -1107,15 +1446,19 @@ class Message(Object, Update):
             caption=caption,
             parse_mode=parse_mode,
             caption_entities=caption_entities,
+            has_spoiler=has_spoiler,
             duration=duration,
             width=width,
             height=height,
             thumb=thumb,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args,
+            progress_args=progress_args
         )
 
     async def reply_audio(
@@ -1123,22 +1466,25 @@ class Message(Object, Update):
         audio: Union[str, BinaryIO],
         quote: bool = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
         duration: int = 0,
         performer: str = None,
         title: str = None,
         thumb: str = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
+            "types.ForceReply"
         ] = None,
-        progress: callable = None,
-        progress_args: tuple = (),
+        progress: Callable = None,
+        progress_args: tuple = ()
     ) -> "Message":
         """Bound method *reply_audio* of :obj:`~pyrogram.types.Message`.
 
@@ -1146,7 +1492,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_audio(
+            await client.send_audio(
                 chat_id=message.chat.id,
                 audio=audio
             )
@@ -1154,7 +1500,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_audio(audio)
+                await message.reply_audio(audio)
 
         Parameters:
             audio (``str``):
@@ -1171,12 +1517,9 @@ class Message(Object, Update):
             caption (``str``, *optional*):
                 Audio caption, 0-1024 characters.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
@@ -1200,14 +1543,24 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            progress (``callable``, *optional*):
+            progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
                 The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
                 detailed description) and will be called back each time a new file chunk has been successfully
@@ -1238,10 +1591,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_audio(
             chat_id=self.chat.id,
@@ -1254,10 +1610,13 @@ class Message(Object, Update):
             title=title,
             thumb=thumb,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args,
+            progress_args=progress_args
         )
 
     async def reply_cached_media(
@@ -1265,16 +1624,19 @@ class Message(Object, Update):
         file_id: str,
         quote: bool = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
-        ] = None,
+            "types.ForceReply"
+        ] = None
     ) -> "Message":
         """Bound method *reply_cached_media* of :obj:`~pyrogram.types.Message`.
 
@@ -1282,7 +1644,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_cached_media(
+            await client.send_cached_media(
                 chat_id=message.chat.id,
                 file_id=file_id
             )
@@ -1290,7 +1652,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_cached_media(file_id)
+                await message.reply_cached_media(file_id)
 
         Parameters:
             file_id (``str``):
@@ -1305,12 +1667,9 @@ class Message(Object, Update):
             caption (``bool``, *optional*):
                 Media caption, 0-1024 characters.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
@@ -1319,8 +1678,18 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
@@ -1333,10 +1702,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_cached_media(
             chat_id=self.chat.id,
@@ -1345,35 +1717,37 @@ class Message(Object, Update):
             parse_mode=parse_mode,
             caption_entities=caption_entities,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
-            reply_markup=reply_markup,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
+            reply_markup=reply_markup
         )
 
-    async def reply_chat_action(self, action: str) -> bool:
+    async def reply_chat_action(self, action: "enums.ChatAction") -> bool:
         """Bound method *reply_chat_action* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            client.send_chat_action(
+            from pyrogram import enums
+
+            await client.send_chat_action(
                 chat_id=message.chat.id,
-                action="typing"
+                action=enums.ChatAction.TYPING
             )
 
         Example:
             .. code-block:: python
 
-                message.reply_chat_action("typing")
+                from pyrogram import enums
+
+                await message.reply_chat_action(enums.ChatAction.TYPING)
 
         Parameters:
-            action (``str``):
-                Type of action to broadcast. Choose one, depending on what the user is about to receive: *"typing"* for
-                text messages, *"upload_photo"* for photos, *"record_video"* or *"upload_video"* for videos,
-                *"record_audio"* or *"upload_audio"* for audio files, *"upload_document"* for general files,
-                *"find_location"* for location data, *"record_video_note"* or *"upload_video_note"* for video notes,
-                *"choose_contact"* for contacts, *"playing"* for games or *"cancel"* to cancel any chat action currently
-                displayed.
+            action (:obj:`~pyrogram.enums.ChatAction`):
+                Type of action to broadcast.
 
         Returns:
             ``bool``: On success, True is returned.
@@ -1382,7 +1756,10 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
             ValueError: In case the provided string is not a valid chat action.
         """
-        return await self._client.send_chat_action(chat_id=self.chat.id, action=action)
+        return await self._client.send_chat_action(
+            chat_id=self.chat.id,
+            action=action
+        )
 
     async def reply_contact(
         self,
@@ -1392,13 +1769,17 @@ class Message(Object, Update):
         last_name: str = "",
         vcard: str = "",
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
-        ] = None,
+            "types.ForceReply"
+        ] = None
     ) -> "Message":
         """Bound method *reply_contact* of :obj:`~pyrogram.types.Message`.
 
@@ -1406,7 +1787,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_contact(
+            await client.send_contact(
                 chat_id=message.chat.id,
                 phone_number=phone_number,
                 first_name=first_name
@@ -1415,7 +1796,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_contact("+1-123-456-7890", "Name")
+                await message.reply_contact("+1-123-456-7890", "Name")
 
         Parameters:
             phone_number (``str``):
@@ -1439,8 +1820,22 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
@@ -1453,10 +1848,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_contact(
             chat_id=self.chat.id,
@@ -1465,8 +1863,12 @@ class Message(Object, Update):
             last_name=last_name,
             vcard=vcard,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
-            reply_markup=reply_markup,
+            quote_text=quote_text,
+            parse_mode=parse_mode,
+            quote_entities=quote_entities,
+            reply_markup=reply_markup
         )
 
     async def reply_document(
@@ -1475,21 +1877,24 @@ class Message(Object, Update):
         quote: bool = None,
         thumb: str = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
         file_name: str = None,
         force_document: bool = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
-        schedule_date: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
+        schedule_date: datetime = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
+            "types.ForceReply"
         ] = None,
-        progress: callable = None,
-        progress_args: tuple = (),
+        progress: Callable = None,
+        progress_args: tuple = ()
     ) -> "Message":
         """Bound method *reply_document* of :obj:`~pyrogram.types.Message`.
 
@@ -1497,7 +1902,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_document(
+            await client.send_document(
                 chat_id=message.chat.id,
                 document=document
             )
@@ -1505,7 +1910,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_document(document)
+                await message.reply_document(document)
 
         Parameters:
             document (``str``):
@@ -1528,12 +1933,9 @@ class Message(Object, Update):
             caption (``str``, *optional*):
                 Document caption, 0-1024 characters.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
@@ -1551,17 +1953,31 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
 
-            schedule_date (``int``, *optional*):
-                Date when the message will be automatically sent. Unix time.
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            progress (``callable``, *optional*):
+            progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
                 The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
                 detailed description) and will be called back each time a new file chunk has been successfully
@@ -1592,10 +2008,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_document(
             chat_id=self.chat.id,
@@ -1607,11 +2026,14 @@ class Message(Object, Update):
             file_name=file_name,
             force_document=force_document,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
             schedule_date=schedule_date,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args,
+            progress_args=progress_args
         )
 
     async def reply_game(
@@ -1619,13 +2041,14 @@ class Message(Object, Update):
         game_short_name: str,
         quote: bool = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
-        ] = None,
+            "types.ForceReply"
+        ] = None
     ) -> "Message":
         """Bound method *reply_game* of :obj:`~pyrogram.types.Message`.
 
@@ -1633,7 +2056,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_game(
+            await client.send_game(
                 chat_id=message.chat.id,
                 game_short_name="lumberjack"
             )
@@ -1641,7 +2064,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_game("lumberjack")
+                await message.reply_game("lumberjack")
 
         Parameters:
             game_short_name (``str``):
@@ -1655,6 +2078,10 @@ class Message(Object, Update):
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
                 Users will receive a notification with no sound.
+
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
 
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
@@ -1670,17 +2097,21 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_game(
             chat_id=self.chat.id,
             game_short_name=game_short_name,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
-            reply_markup=reply_markup,
+            reply_markup=reply_markup
         )
 
     async def reply_inline_bot_result(
@@ -1689,7 +2120,11 @@ class Message(Object, Update):
         result_id: str,
         quote: bool = None,
         disable_notification: bool = None,
+        message_thread_id: bool = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        quote_entities: List["types.MessageEntity"] = None
     ) -> "Message":
         """Bound method *reply_inline_bot_result* of :obj:`~pyrogram.types.Message`.
 
@@ -1697,7 +2132,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_inline_bot_result(
+            await client.send_inline_bot_result(
                 chat_id=message.chat.id,
                 query_id=query_id,
                 result_id=result_id
@@ -1706,7 +2141,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_inline_bot_result(query_id, result_id)
+                await message.reply_inline_bot_result(query_id, result_id)
 
         Parameters:
             query_id (``int``):
@@ -1724,8 +2159,22 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``bool``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
         Returns:
             On success, the sent Message is returned.
@@ -1734,17 +2183,24 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_inline_bot_result(
             chat_id=self.chat.id,
             query_id=query_id,
             result_id=result_id,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            parse_mode=parse_mode,
+            quote_entities=quote_entities
         )
 
     async def reply_location(
@@ -1753,13 +2209,16 @@ class Message(Object, Update):
         longitude: float,
         quote: bool = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
-        ] = None,
+            "types.ForceReply"
+        ] = None
     ) -> "Message":
         """Bound method *reply_location* of :obj:`~pyrogram.types.Message`.
 
@@ -1767,16 +2226,16 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_location(
+            await client.send_location(
                 chat_id=message.chat.id,
-                latitude=41.890251,
-                longitude=12.492373
+                latitude=latitude,
+                longitude=longitude
             )
 
         Example:
             .. code-block:: python
 
-                message.reply_location(41.890251, 12.492373)
+                await message.reply_location(latitude, longitude)
 
         Parameters:
             latitude (``float``):
@@ -1794,8 +2253,18 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
@@ -1808,34 +2277,44 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_location(
             chat_id=self.chat.id,
             latitude=latitude,
             longitude=longitude,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
-            reply_markup=reply_markup,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
+            reply_markup=reply_markup
         )
 
     async def reply_media_group(
         self,
-        media: list[Union["types.InputMediaPhoto", "types.InputMediaVideo"]],
+        media: List[Union["types.InputMediaPhoto", "types.InputMediaVideo"]],
         quote: bool = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
-    ) -> list["types.Message"]:
+        quote_text: str = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        quote_entities: List["types.MessageEntity"] = None
+    ) -> List["types.Message"]:
         """Bound method *reply_media_group* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            client.send_media_group(
+            await client.send_media_group(
                 chat_id=message.chat.id,
                 media=list_of_media
             )
@@ -1843,7 +2322,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_media_group(list_of_media)
+                await message.reply_media_group(list_of_media)
 
         Parameters:
             media (``list``):
@@ -1860,8 +2339,22 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
         Returns:
             On success, a :obj:`~pyrogram.types.Messages` object is returned containing all the
@@ -1871,16 +2364,23 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_media_group(
             chat_id=self.chat.id,
             media=media,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            parse_mode=parse_mode,
+            quote_entities=quote_entities
         )
 
     async def reply_photo(
@@ -1888,19 +2388,23 @@ class Message(Object, Update):
         photo: Union[str, BinaryIO],
         quote: bool = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
+        has_spoiler: bool = None,
         ttl_seconds: int = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
+            "types.ForceReply"
         ] = None,
-        progress: callable = None,
-        progress_args: tuple = (),
+        progress: Callable = None,
+        progress_args: tuple = ()
     ) -> "Message":
         """Bound method *reply_photo* of :obj:`~pyrogram.types.Message`.
 
@@ -1908,7 +2412,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_photo(
+            await client.send_photo(
                 chat_id=message.chat.id,
                 photo=photo
             )
@@ -1916,7 +2420,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_photo(photo)
+                await message.reply_photo(photo)
 
         Parameters:
             photo (``str``):
@@ -1933,15 +2437,15 @@ class Message(Object, Update):
             caption (``str``, *optional*):
                 Photo caption, 0-1024 characters.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
+
+            has_spoiler (``bool``, *optional*):
+                Pass True if the photo needs to be covered with a spoiler animation.
 
             ttl_seconds (``int``, *optional*):
                 Self-Destruct Timer.
@@ -1952,14 +2456,24 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            progress (``callable``, *optional*):
+            progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
                 The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
                 detailed description) and will be called back each time a new file chunk has been successfully
@@ -1990,10 +2504,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_photo(
             chat_id=self.chat.id,
@@ -2001,32 +2518,47 @@ class Message(Object, Update):
             caption=caption,
             parse_mode=parse_mode,
             caption_entities=caption_entities,
+            has_spoiler=has_spoiler,
             ttl_seconds=ttl_seconds,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args,
+            progress_args=progress_args
         )
 
     async def reply_poll(
         self,
         question: str,
-        options: list[str],
-        quote: bool = None,
+        options: List[str],
         is_anonymous: bool = True,
+        type: "enums.PollType" = enums.PollType.REGULAR,
         allows_multiple_answers: bool = None,
-        type: str = "regular",
         correct_option_id: int = None,
+        explanation: str = None,
+        explanation_parse_mode: "enums.ParseMode" = None,
+        explanation_entities: List["types.MessageEntity"] = None,
+        open_period: int = None,
+        close_date: datetime = None,
+        is_closed: bool = None,
+        quote: bool = None,
         disable_notification: bool = None,
+        protect_content: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
-        schedule_date: int = None,
+        quote_text: str = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        quote_entities: List["types.MessageEntity"] = None,
+        schedule_date: datetime = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
-        ] = None,
+            "types.ForceReply"
+        ] = None
     ) -> "Message":
         """Bound method *reply_poll* of :obj:`~pyrogram.types.Message`.
 
@@ -2034,54 +2566,95 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_poll(
+            await client.send_poll(
                 chat_id=message.chat.id,
-                question="Is Pyrogram the best?",
-                options=["Yes", "Yes"]
+                question="This is a poll",
+                options=["A", "B", "C]
             )
 
         Example:
             .. code-block:: python
 
-                message.reply_poll("Is Pyrogram the best?", ["Yes", "Yes"])
+                await message.reply_poll("This is a poll", ["A", "B", "C"])
 
         Parameters:
             question (``str``):
-                The poll question, as string.
+                Poll question, 1-255 characters.
 
             options (List of ``str``):
-                The poll options, as list of strings (2 to 10 options are allowed).
+                List of answer options, 2-10 strings 1-100 characters each.
+
+            is_anonymous (``bool``, *optional*):
+                True, if the poll needs to be anonymous.
+                Defaults to True.
+
+            type (:obj`~pyrogram.enums.PollType`, *optional*):
+                Poll type, :obj:`~pyrogram.enums.PollType.QUIZ` or :obj:`~pyrogram.enums.PollType.REGULAR`.
+                Defaults to :obj:`~pyrogram.enums.PollType.REGULAR`.
+
+            allows_multiple_answers (``bool``, *optional*):
+                True, if the poll allows multiple answers, ignored for polls in quiz mode.
+                Defaults to False.
+
+            correct_option_id (``int``, *optional*):
+                0-based identifier of the correct answer option, required for polls in quiz mode.
+
+            explanation (``str``, *optional*):
+                Text that is shown when a user chooses an incorrect answer or taps on the lamp icon in a quiz-style
+                poll, 0-200 characters with at most 2 line feeds after entities parsing.
+
+            explanation_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            explanation_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in the poll explanation, which can be specified instead of
+                *parse_mode*.
+
+            open_period (``int``, *optional*):
+                Amount of time in seconds the poll will be active after creation, 5-600.
+                Can't be used together with *close_date*.
+
+            close_date (:py:obj:`~datetime.datetime`, *optional*):
+                Point in time when the poll will be automatically closed.
+                Must be at least 5 and no more than 600 seconds in the future.
+                Can't be used together with *open_period*.
+
+            is_closed (``bool``, *optional*):
+                Pass True, if the poll needs to be immediately closed.
+                This can be useful for poll preview.
 
             quote (``bool``, *optional*):
                 If ``True``, the message will be sent as a reply to this message.
                 If *reply_to_message_id* is passed, this parameter will be ignored.
                 Defaults to ``True`` in group chats and ``False`` in private chats.
 
-            is_anonymous (``bool``, *optional*):
-                True, if the poll needs to be anonymous.
-                Defaults to True.
-
-            type (``str``, *optional*):
-                Poll type, "quiz" or "regular".
-                Defaults to "regular"
-
-            allows_multiple_answers (``bool``, *optional*):
-                True, if the poll allows multiple answers, ignored for polls in quiz mode.
-                Defaults to False
-
-            correct_option_id (``int``, *optional*):
-                0-based identifier of the correct answer option (the index of the correct option)
-                Required for polls in quiz mode.
-
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            protect_content (``bool``, *optional*):
+                Protects the contents of the sent message from forwarding and saving.
+
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
 
-            schedule_date (``int``, *optional*):
-                Date when the message will be automatically sent. Unix time.
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
@@ -2094,23 +2667,37 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_poll(
             chat_id=self.chat.id,
             question=question,
             options=options,
             is_anonymous=is_anonymous,
-            allows_multiple_answers=allows_multiple_answers,
             type=type,
+            allows_multiple_answers=allows_multiple_answers,
             correct_option_id=correct_option_id,
+            explanation=explanation,
+            explanation_parse_mode=explanation_parse_mode,
+            explanation_entities=explanation_entities,
+            open_period=open_period,
+            close_date=close_date,
+            is_closed=is_closed,
             disable_notification=disable_notification,
+            protect_content=protect_content,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            parse_mode=parse_mode,
+            quote_entities=quote_entities,
             schedule_date=schedule_date,
-            reply_markup=reply_markup,
+            reply_markup=reply_markup
         )
 
     async def reply_sticker(
@@ -2118,15 +2705,19 @@ class Message(Object, Update):
         sticker: Union[str, BinaryIO],
         quote: bool = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
+            "types.ForceReply"
         ] = None,
-        progress: callable = None,
-        progress_args: tuple = (),
+        progress: Callable = None,
+        progress_args: tuple = ()
     ) -> "Message":
         """Bound method *reply_sticker* of :obj:`~pyrogram.types.Message`.
 
@@ -2134,7 +2725,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_sticker(
+            await client.send_sticker(
                 chat_id=message.chat.id,
                 sticker=sticker
             )
@@ -2142,7 +2733,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_sticker(sticker)
+                await message.reply_sticker(sticker)
 
         Parameters:
             sticker (``str``):
@@ -2160,14 +2751,28 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            progress (``callable``, *optional*):
+            progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
                 The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
                 detailed description) and will be called back each time a new file chunk has been successfully
@@ -2198,19 +2803,26 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_sticker(
             chat_id=self.chat.id,
             sticker=sticker,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            parse_mode=parse_mode,
+            quote_entities=quote_entities,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args,
+            progress_args=progress_args
         )
 
     async def reply_venue(
@@ -2223,13 +2835,17 @@ class Message(Object, Update):
         foursquare_id: str = "",
         foursquare_type: str = "",
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
-        ] = None,
+            "types.ForceReply"
+        ] = None
     ) -> "Message":
         """Bound method *reply_venue* of :obj:`~pyrogram.types.Message`.
 
@@ -2237,18 +2853,18 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_venue(
+            await client.send_venue(
                 chat_id=message.chat.id,
-                latitude=41.890251,
-                longitude=12.492373,
-                title="Coliseum",
-                address="Piazza del Colosseo, 1, 00184 Roma RM"
+                latitude=latitude,
+                longitude=longitude,
+                title="Venue title",
+                address="Venue address"
             )
 
         Example:
             .. code-block:: python
 
-                message.reply_venue(41.890251, 12.492373, "Coliseum", "Piazza del Colosseo, 1, 00184 Roma RM")
+                await message.reply_venue(latitude, longitude, "Venue title", "Venue address")
 
         Parameters:
             latitude (``float``):
@@ -2279,8 +2895,22 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
@@ -2293,10 +2923,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_venue(
             chat_id=self.chat.id,
@@ -2307,8 +2940,12 @@ class Message(Object, Update):
             foursquare_id=foursquare_id,
             foursquare_type=foursquare_type,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
-            reply_markup=reply_markup,
+            quote_text=quote_text,
+            parse_mode=parse_mode,
+            quote_entities=quote_entities,
+            reply_markup=reply_markup
         )
 
     async def reply_video(
@@ -2316,8 +2953,9 @@ class Message(Object, Update):
         video: Union[str, BinaryIO],
         quote: bool = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
+        has_spoiler: bool = None,
         ttl_seconds: int = None,
         duration: int = 0,
         width: int = 0,
@@ -2325,15 +2963,18 @@ class Message(Object, Update):
         thumb: str = None,
         supports_streaming: bool = True,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
+            "types.ForceReply"
         ] = None,
-        progress: callable = None,
-        progress_args: tuple = (),
+        progress: Callable = None,
+        progress_args: tuple = ()
     ) -> "Message":
         """Bound method *reply_video* of :obj:`~pyrogram.types.Message`.
 
@@ -2341,7 +2982,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_video(
+            await client.send_video(
                 chat_id=message.chat.id,
                 video=video
             )
@@ -2349,7 +2990,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_video(video)
+                await message.reply_video(video)
 
         Parameters:
             video (``str``):
@@ -2366,15 +3007,15 @@ class Message(Object, Update):
             caption (``str``, *optional*):
                 Video caption, 0-1024 characters.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
+
+            has_spoiler (``bool``, *optional*):
+                Pass True if the video needs to be covered with a spoiler animation.
 
             ttl_seconds (``int``, *optional*):
                 Self-Destruct Timer.
@@ -2403,14 +3044,24 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            progress (``callable``, *optional*):
+            progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
                 The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
                 detailed description) and will be called back each time a new file chunk has been successfully
@@ -2441,10 +3092,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_video(
             chat_id=self.chat.id,
@@ -2452,6 +3106,7 @@ class Message(Object, Update):
             caption=caption,
             parse_mode=parse_mode,
             caption_entities=caption_entities,
+            has_spoiler=has_spoiler,
             ttl_seconds=ttl_seconds,
             duration=duration,
             width=width,
@@ -2459,10 +3114,13 @@ class Message(Object, Update):
             thumb=thumb,
             supports_streaming=supports_streaming,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args,
+            progress_args=progress_args
         )
 
     async def reply_video_note(
@@ -2473,15 +3131,19 @@ class Message(Object, Update):
         length: int = 1,
         thumb: str = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
+            "types.ForceReply"
         ] = None,
-        progress: callable = None,
-        progress_args: tuple = (),
+        progress: Callable = None,
+        progress_args: tuple = ()
     ) -> "Message":
         """Bound method *reply_video_note* of :obj:`~pyrogram.types.Message`.
 
@@ -2489,7 +3151,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_video_note(
+            await client.send_video_note(
                 chat_id=message.chat.id,
                 video_note=video_note
             )
@@ -2497,7 +3159,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_video_note(video_note)
+                await message.reply_video_note(video_note)
 
         Parameters:
             video_note (``str``):
@@ -2527,14 +3189,28 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            progress (``callable``, *optional*):
+            progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
                 The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
                 detailed description) and will be called back each time a new file chunk has been successfully
@@ -2565,10 +3241,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_video_note(
             chat_id=self.chat.id,
@@ -2577,10 +3256,14 @@ class Message(Object, Update):
             length=length,
             thumb=thumb,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            parse_mode=parse_mode,
+            quote_entities=quote_entities,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args,
+            progress_args=progress_args
         )
 
     async def reply_voice(
@@ -2588,19 +3271,23 @@ class Message(Object, Update):
         voice: Union[str, BinaryIO],
         quote: bool = None,
         caption: str = "",
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
         duration: int = 0,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
+        ttl_seconds: int = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
+            "types.ForceReply"
         ] = None,
-        progress: callable = None,
-        progress_args: tuple = (),
+        progress: Callable = None,
+        progress_args: tuple = ()
     ) -> "Message":
         """Bound method *reply_voice* of :obj:`~pyrogram.types.Message`.
 
@@ -2608,7 +3295,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_voice(
+            await client.send_voice(
                 chat_id=message.chat.id,
                 voice=voice
             )
@@ -2616,7 +3303,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.reply_voice(voice)
+                await message.reply_voice(voice)
 
         Parameters:
             voice (``str``):
@@ -2633,12 +3320,9 @@ class Message(Object, Update):
             caption (``str``, *optional*):
                 Voice message caption, 0-1024 characters.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
@@ -2650,14 +3334,29 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message
+
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
+
+            ttl_seconds (``int``, *optional*):
+                Self-Destruct Timer.
+                If you set a timer, the voice note will self-destruct in *ttl_seconds*
+                seconds after it was listened.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            progress (``callable``, *optional*):
+            progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
                 The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
                 detailed description) and will be called back each time a new file chunk has been successfully
@@ -2688,10 +3387,13 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if quote is None:
-            quote = self.chat.type != "private"
+            quote = self.chat.type != enums.ChatType.PRIVATE
 
         if reply_to_message_id is None and quote:
-            reply_to_message_id = self.message_id
+            reply_to_message_id = self.id
+
+        if message_thread_id is None:
+            message_thread_id = self.message_thread_id
 
         return await self._client.send_voice(
             chat_id=self.chat.id,
@@ -2701,19 +3403,23 @@ class Message(Object, Update):
             caption_entities=caption_entities,
             duration=duration,
             disable_notification=disable_notification,
+            message_thread_id=message_thread_id,
             reply_to_message_id=reply_to_message_id,
+            quote_text=quote_text,
+            quote_entities=quote_entities,
+            ttl_seconds=ttl_seconds,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args,
+            progress_args=progress_args
         )
 
     async def edit_text(
         self,
         text: str,
-        parse_mode: Optional[str] = object,
-        entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        entities: List["types.MessageEntity"] = None,
         disable_web_page_preview: bool = None,
-        reply_markup: "types.InlineKeyboardMarkup" = None,
+        reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> "Message":
         """Bound method *edit_text* of :obj:`~pyrogram.types.Message`.
 
@@ -2723,27 +3429,24 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.edit_message_text(
+            await client.edit_message_text(
                 chat_id=message.chat.id,
-                message_id=message.message_id,
+                message_id=message.id,
                 text="hello"
             )
 
         Example:
             .. code-block:: python
 
-                message.edit_text("hello")
+                await message.edit_text("hello")
 
         Parameters:
             text (``str``):
                 New text of the message.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in message text, which can be specified instead of *parse_mode*.
@@ -2762,12 +3465,12 @@ class Message(Object, Update):
         """
         return await self._client.edit_message_text(
             chat_id=self.chat.id,
-            message_id=self.message_id,
+            message_id=self.id,
             text=text,
             parse_mode=parse_mode,
             entities=entities,
             disable_web_page_preview=disable_web_page_preview,
-            reply_markup=reply_markup,
+            reply_markup=reply_markup
         )
 
     edit = edit_text
@@ -2775,9 +3478,9 @@ class Message(Object, Update):
     async def edit_caption(
         self,
         caption: str,
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
-        reply_markup: "types.InlineKeyboardMarkup" = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
+        reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> "Message":
         """Bound method *edit_caption* of :obj:`~pyrogram.types.Message`.
 
@@ -2785,27 +3488,24 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.edit_message_caption(
+            await client.edit_message_caption(
                 chat_id=message.chat.id,
-                message_id=message.message_id,
+                message_id=message.id,
                 caption="hello"
             )
 
         Example:
             .. code-block:: python
 
-                message.edit_caption("hello")
+                await message.edit_caption("hello")
 
         Parameters:
             caption (``str``):
                 New caption of the message.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
@@ -2821,15 +3521,17 @@ class Message(Object, Update):
         """
         return await self._client.edit_message_caption(
             chat_id=self.chat.id,
-            message_id=self.message_id,
+            message_id=self.id,
             caption=caption,
             parse_mode=parse_mode,
             caption_entities=caption_entities,
-            reply_markup=reply_markup,
+            reply_markup=reply_markup
         )
 
     async def edit_media(
-        self, media: "types.InputMedia", reply_markup: "types.InlineKeyboardMarkup" = None
+        self,
+        media: "types.InputMedia",
+        reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> "Message":
         """Bound method *edit_media* of :obj:`~pyrogram.types.Message`.
 
@@ -2837,16 +3539,16 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.edit_message_media(
+            await client.edit_message_media(
                 chat_id=message.chat.id,
-                message_id=message.message_id,
+                message_id=message.id,
                 media=media
             )
 
         Example:
             .. code-block:: python
 
-                message.edit_media(media)
+                await message.edit_media(media)
 
         Parameters:
             media (:obj:`~pyrogram.types.InputMedia`):
@@ -2862,28 +3564,29 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         return await self._client.edit_message_media(
-            chat_id=self.chat.id, message_id=self.message_id, media=media, reply_markup=reply_markup
+            chat_id=self.chat.id,
+            message_id=self.id,
+            media=media,
+            reply_markup=reply_markup
         )
 
-    async def edit_reply_markup(
-        self, reply_markup: "types.InlineKeyboardMarkup" = None
-    ) -> "Message":
+    async def edit_reply_markup(self, reply_markup: "types.InlineKeyboardMarkup" = None) -> "Message":
         """Bound method *edit_reply_markup* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            client.edit_message_reply_markup(
+            await client.edit_message_reply_markup(
                 chat_id=message.chat.id,
-                message_id=message.message_id,
+                message_id=message.id,
                 reply_markup=inline_reply_markup
             )
 
         Example:
             .. code-block:: python
 
-                message.edit_reply_markup(inline_reply_markup)
+                await message.edit_reply_markup(inline_reply_markup)
 
         Parameters:
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`):
@@ -2897,28 +3600,34 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         return await self._client.edit_message_reply_markup(
-            chat_id=self.chat.id, message_id=self.message_id, reply_markup=reply_markup
+            chat_id=self.chat.id,
+            message_id=self.id,
+            reply_markup=reply_markup
         )
 
     async def forward(
-        self, chat_id: Union[int, str], disable_notification: bool = None, schedule_date: int = None
-    ) -> Union["types.Message", list["types.Message"]]:
+        self,
+        chat_id: Union[int, str],
+        message_thread_id: int = None,
+        disable_notification: bool = None,
+        schedule_date: datetime = None
+    ) -> Union["types.Message", List["types.Message"]]:
         """Bound method *forward* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            client.forward_messages(
+            await client.forward_messages(
                 chat_id=chat_id,
                 from_chat_id=message.chat.id,
-                message_ids=message.message_id
+                message_ids=message.id
             )
 
         Example:
             .. code-block:: python
 
-                message.forward(chat_id)
+                await message.forward(chat_id)
 
         Parameters:
             chat_id (``int`` | ``str``):
@@ -2926,12 +3635,16 @@ class Message(Object, Update):
                 For your personal cloud (Saved Messages) you can simply use "me" or "self".
                 For a contact that exists in your Telegram address book you can use his phone number (str).
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
-            schedule_date (``int``, *optional*):
-                Date when the message will be automatically sent. Unix time.
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
 
         Returns:
             On success, the forwarded Message is returned.
@@ -2942,44 +3655,50 @@ class Message(Object, Update):
         return await self._client.forward_messages(
             chat_id=chat_id,
             from_chat_id=self.chat.id,
-            message_ids=self.message_id,
+            message_ids=self.id,
+            message_thread_id=message_thread_id,
             disable_notification=disable_notification,
-            schedule_date=schedule_date,
+            schedule_date=schedule_date
         )
 
     async def copy(
         self,
         chat_id: Union[int, str],
         caption: str = None,
-        parse_mode: Optional[str] = object,
-        caption_entities: list["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
+        reply_to_chat_id: Union[int, str] = None,
         reply_to_message_id: int = None,
-        schedule_date: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
+        schedule_date: datetime = None,
         protect_content: bool = None,
+        has_spoiler: bool = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply",
-        ] = object,
-    ) -> Union["types.Message", list["types.Message"]]:
+            "types.ForceReply"
+        ] = object
+    ) -> Union["types.Message", List["types.Message"]]:
         """Bound method *copy* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            client.copy_message(
+            await client.copy_message(
                 chat_id=chat_id,
                 from_chat_id=message.chat.id,
-                message_id=message.message_id
+                message_id=message.id
             )
 
         Example:
             .. code-block:: python
 
-                message.copy(chat_id)
+                await message.copy(chat_id)
 
         Parameters:
             chat_id (``int`` | ``str``):
@@ -2992,12 +3711,9 @@ class Message(Object, Update):
                 If not specified, the original caption is kept.
                 Pass "" (empty string) to remove the caption.
 
-            parse_mode (``str``, *optional*):
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
-                Pass "markdown" or "md" to enable Markdown-style parsing only.
-                Pass "html" to enable HTML-style parsing only.
-                Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the new caption, which can be specified instead of *parse_mode*.
@@ -3006,14 +3722,30 @@ class Message(Object, Update):
                 Sends the message silently.
                 Users will receive a notification with no sound.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier for the target message thread (topic) of the forum.
+                For supergroups only.
+
+            reply_to_chat_id (``int``, *optional*):
+                If the message is a reply, ID of the original chat.
+
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
 
-            schedule_date (``int``, *optional*):
-                Date when the message will be automatically sent. Unix time.
+            quote_text (``str``):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in quote text, which can be specified instead of *parse_mode*.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
 
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
+
+            has_spoiler (``bool``, *optional*):
+                True, if the message media is covered by a spoiler animation.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
@@ -3028,38 +3760,44 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if self.service:
-            log.warning(
-                f"Service messages cannot be copied. "
-                f"chat_id: {self.chat.id}, message_id: {self.message_id}"
-            )
+            log.warning("Service messages cannot be copied. chat_id: %s, message_id: %s",
+                        self.chat.id, self.id)
         elif self.game and not await self._client.storage.is_bot():
-            log.warning(
-                f"Users cannot send messages with Game media type. "
-                f"chat_id: {self.chat.id}, message_id: {self.message_id}"
-            )
+            log.warning("Users cannot send messages with Game media type. chat_id: %s, message_id: %s",
+                        self.chat.id, self.id)
         elif self.empty:
-            log.warning("Empty messages cannot be copied. ")
+            log.warning("Empty messages cannot be copied.")
         elif self.text:
             return await self._client.send_message(
                 chat_id,
                 text=self.text,
                 entities=self.entities,
+                parse_mode=enums.ParseMode.DISABLED,
                 disable_web_page_preview=not self.web_page,
                 disable_notification=disable_notification,
+                message_thread_id=message_thread_id,
+                reply_to_chat_id=reply_to_chat_id,
                 reply_to_message_id=reply_to_message_id,
+                quote_text=quote_text,
+                quote_entities=quote_entities,
                 schedule_date=schedule_date,
                 protect_content=protect_content,
-                reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                reply_markup=self.reply_markup if reply_markup is object else reply_markup
             )
         elif self.media:
             send_media = partial(
                 self._client.send_cached_media,
                 chat_id=chat_id,
                 disable_notification=disable_notification,
+                message_thread_id=message_thread_id,
                 reply_to_message_id=reply_to_message_id,
+                reply_to_chat_id=reply_to_chat_id,
+                quote_text=quote_text,
+                quote_entities=quote_entities,
                 schedule_date=schedule_date,
                 protect_content=protect_content,
-                reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                has_spoiler=has_spoiler,
+                reply_markup=self.reply_markup if reply_markup is object else reply_markup
             )
 
             if self.photo:
@@ -3086,7 +3824,8 @@ class Message(Object, Update):
                     last_name=self.contact.last_name,
                     vcard=self.contact.vcard,
                     disable_notification=disable_notification,
-                    schedule_date=schedule_date,
+                    message_thread_id=message_thread_id,
+                    schedule_date=schedule_date
                 )
             elif self.location:
                 return await self._client.send_location(
@@ -3094,7 +3833,8 @@ class Message(Object, Update):
                     latitude=self.location.latitude,
                     longitude=self.location.longitude,
                     disable_notification=disable_notification,
-                    schedule_date=schedule_date,
+                    message_thread_id=message_thread_id,
+                    schedule_date=schedule_date
                 )
             elif self.venue:
                 return await self._client.send_venue(
@@ -3106,7 +3846,8 @@ class Message(Object, Update):
                     foursquare_id=self.venue.foursquare_id,
                     foursquare_type=self.venue.foursquare_type,
                     disable_notification=disable_notification,
-                    schedule_date=schedule_date,
+                    message_thread_id=message_thread_id,
+                    schedule_date=schedule_date
                 )
             elif self.poll:
                 return await self._client.send_poll(
@@ -3114,19 +3855,24 @@ class Message(Object, Update):
                     question=self.poll.question,
                     options=[opt.text for opt in self.poll.options],
                     disable_notification=disable_notification,
-                    schedule_date=schedule_date,
+                    message_thread_id=message_thread_id,
+                    schedule_date=schedule_date
                 )
             elif self.game:
                 return await self._client.send_game(
                     chat_id,
                     game_short_name=self.game.short_name,
                     disable_notification=disable_notification,
+                    message_thread_id=message_thread_id
                 )
             else:
                 raise ValueError("Unknown media type")
 
             if self.sticker or self.video_note:  # Sticker and VideoNote should have no caption
-                return await send_media(file_id=file_id)
+                return await send_media(
+                    file_id=file_id,
+                    message_thread_id=message_thread_id
+                )
             else:
                 if caption is None:
                     caption = self.caption or ""
@@ -3137,6 +3883,7 @@ class Message(Object, Update):
                     caption=caption,
                     parse_mode=parse_mode,
                     caption_entities=caption_entities,
+                    message_thread_id=message_thread_id
                 )
         else:
             raise ValueError("Can't copy this message")
@@ -3148,15 +3895,15 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.delete_messages(
+            await client.delete_messages(
                 chat_id=chat_id,
-                message_ids=message.message_id
+                message_ids=message.id
             )
 
         Example:
             .. code-block:: python
 
-                message.delete()
+                await message.delete()
 
         Parameters:
             revoke (``bool``, *optional*):
@@ -3172,12 +3919,12 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         return await self._client.delete_messages(
-            chat_id=self.chat.id, message_ids=self.message_id, revoke=revoke
+            chat_id=self.chat.id,
+            message_ids=self.id,
+            revoke=revoke
         )
 
-    async def click(
-        self, x: Union[int, str] = 0, y: int = None, quote: bool = None, timeout: int = 10
-    ):
+    async def click(self, x: Union[int, str] = 0, y: int = None, quote: bool = None, timeout: int = 10):
         """Bound method *click* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for clicking a button attached to the message instead of:
@@ -3186,9 +3933,9 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.request_callback_answer(
+            await client.request_callback_answer(
                 chat_id=message.chat.id,
-                message_id=message.message_id,
+                message_id=message.id,
                 callback_data=message.reply_markup[i][j].callback_data
             )
 
@@ -3196,7 +3943,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.send_message(
+            await client.send_message(
                 chat_id=message.chat.id,
                 text=message.reply_markup[i][j].text
             )
@@ -3252,7 +3999,11 @@ class Message(Object, Update):
 
         if isinstance(x, int) and y is None:
             try:
-                button = [button for row in keyboard for button in row][x]
+                button = [
+                    button
+                    for row in keyboard
+                    for button in row
+                ][x]
             except IndexError:
                 raise ValueError(f"The button at index {x} doesn't exist")
         elif isinstance(x, int) and isinstance(y, int):
@@ -3264,7 +4015,12 @@ class Message(Object, Update):
             label = x.encode("utf-16", "surrogatepass").decode("utf-16")
 
             try:
-                button = [button for row in keyboard for button in row if label == button.text][0]
+                button = [
+                    button
+                    for row in keyboard
+                    for button in row
+                    if label == button.text
+                ][0]
             except IndexError:
                 raise ValueError(f"The button with label '{x}' doesn't exists")
         else:
@@ -3274,9 +4030,9 @@ class Message(Object, Update):
             if button.callback_data:
                 return await self._client.request_callback_answer(
                     chat_id=self.chat.id,
-                    message_id=self.message_id,
+                    message_id=self.id,
                     callback_data=button.callback_data,
-                    timeout=timeout,
+                    timeout=timeout
                 )
             elif button.url:
                 return button.url
@@ -3289,28 +4045,33 @@ class Message(Object, Update):
         else:
             await self.reply(button, quote=quote)
 
-    async def react(self, emoji: str = "") -> bool:
+    async def react(self, emoji: Union[int, str, List[Union[int, str]]] = None, big: bool = False) -> bool:
         """Bound method *react* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            client.send_reaction(
+            await client.send_reaction(
                 chat_id=chat_id,
-                message_id=message.message_id,
+                message_id=message.id,
                 emoji="🔥"
             )
 
         Example:
             .. code-block:: python
 
-                message.react(emoji="🔥")
+                await message.react(emoji="🔥")
 
         Parameters:
-            emoji (``str``, *optional*):
+            emoji (``int`` | ``str`` | List of ``int`` | ``str``, *optional*):
                 Reaction emoji.
-                Pass "" as emoji (default) to retract the reaction.
+                Pass None as emoji (default) to retract the reaction.
+                Pass list of int or str to react multiple emojis.
+
+            big (``bool``, *optional*):
+                Pass True to show a bigger and longer reaction.
+                Defaults to False.
 
         Returns:
             ``bool``: On success, True is returned.
@@ -3320,7 +4081,10 @@ class Message(Object, Update):
         """
 
         return await self._client.send_reaction(
-            chat_id=self.chat.id, message_id=self.message_id, emoji=emoji
+            chat_id=self.chat.id,
+            message_id=self.id,
+            emoji=emoji,
+            big=big
         )
 
     async def retract_vote(
@@ -3349,14 +4113,18 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
 
-        return await self._client.retract_vote(chat_id=self.chat.id, message_id=self.message_id)
+        return await self._client.retract_vote(
+            chat_id=self.chat.id,
+            message_id=self.id
+        )
 
     async def download(
         self,
         file_name: str = "",
+        in_memory: bool = False,
         block: bool = True,
-        progress: callable = None,
-        progress_args: tuple = (),
+        progress: Callable = None,
+        progress_args: tuple = ()
     ) -> str:
         """Bound method *download* of :obj:`~pyrogram.types.Message`.
 
@@ -3364,12 +4132,12 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.download_media(message)
+            await client.download_media(message)
 
         Example:
             .. code-block:: python
 
-                message.download()
+                await message.download()
 
         Parameters:
             file_name (``str``, *optional*):
@@ -3378,11 +4146,16 @@ class Message(Object, Update):
                 You can also specify a path for downloading files in a custom location: paths that end with "/"
                 are considered directories. All non-existent folders will be created automatically.
 
+            in_memory (``bool``, *optional*):
+                Pass True to download the media in-memory.
+                A binary file-like object with its attribute ".name" set will be returned.
+                Defaults to False.
+
             block (``bool``, *optional*):
                 Blocks the code execution until the file has been downloaded.
                 Defaults to True.
 
-            progress (``callable``, *optional*):
+            progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
                 The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
                 detailed description) and will be called back each time a new file chunk has been successfully
@@ -3414,6 +4187,7 @@ class Message(Object, Update):
         return await self._client.download_media(
             message=self,
             file_name=file_name,
+            in_memory=in_memory,
             block=block,
             progress=progress,
             progress_args=progress_args,
@@ -3431,7 +4205,7 @@ class Message(Object, Update):
 
             client.vote_poll(
                 chat_id=message.chat.id,
-                message_id=message.message_id,
+                message_id=message.id,
                 option=1
             )
 
@@ -3452,19 +4226,19 @@ class Message(Object, Update):
         """
 
         return await self._client.vote_poll(
-            chat_id=self.chat.id, message_id=self.message_id, options=option
+            chat_id=self.chat.id,
+            message_id=self.id,
+            options=option
         )
 
-    async def pin(
-        self, disable_notification: bool = False, both_sides: bool = False
-    ) -> "types.Message":
+    async def pin(self, disable_notification: bool = False, both_sides: bool = False) -> "types.Message":
         """Bound method *pin* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            client.pin_chat_message(
+            await client.pin_chat_message(
                 chat_id=message.chat.id,
                 message_id=message_id
             )
@@ -3472,7 +4246,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.pin()
+                await message.pin()
 
         Parameters:
             disable_notification (``bool``):
@@ -3491,9 +4265,9 @@ class Message(Object, Update):
         """
         return await self._client.pin_chat_message(
             chat_id=self.chat.id,
-            message_id=self.message_id,
+            message_id=self.id,
             disable_notification=disable_notification,
-            both_sides=both_sides,
+            both_sides=both_sides
         )
 
     async def unpin(self) -> bool:
@@ -3503,7 +4277,7 @@ class Message(Object, Update):
 
         .. code-block:: python
 
-            client.unpin_chat_message(
+            await client.unpin_chat_message(
                 chat_id=message.chat.id,
                 message_id=message_id
             )
@@ -3511,7 +4285,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                message.unpin()
+                await message.unpin()
 
         Returns:
             True on success.
@@ -3520,5 +4294,6 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         return await self._client.unpin_chat_message(
-            chat_id=self.chat.id, message_id=self.message_id
+            chat_id=self.chat.id,
+            message_id=self.id
         )
