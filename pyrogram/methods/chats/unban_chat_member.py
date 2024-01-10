@@ -23,11 +23,7 @@ from pyrogram.scaffold import Scaffold
 
 
 class UnbanChatMember(Scaffold):
-    async def unban_chat_member(
-        self,
-        chat_id: Union[int, str],
-        user_id: Union[int, str]
-    ) -> bool:
+    async def unban_chat_member(self, chat_id: Union[int, str], user_id: Union[int, str]) -> bool:
         """Unban a previously banned user in a supergroup or channel.
         The user will **not** return to the group or channel automatically, but will be able to join via link, etc.
         You must be an administrator for this to work.
@@ -53,9 +49,7 @@ class UnbanChatMember(Scaffold):
             raw.functions.channels.EditBanned(
                 channel=await self.resolve_peer(chat_id),
                 participant=await self.resolve_peer(user_id),
-                banned_rights=raw.types.ChatBannedRights(
-                    until_date=0
-                )
+                banned_rights=raw.types.ChatBannedRights(until_date=0),
             )
         )
 

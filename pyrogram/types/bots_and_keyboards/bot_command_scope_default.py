@@ -17,8 +17,9 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
+
 from pyrogram import raw
-from .bot_command_scope import BotCommandScope
+from pyrogram.types.bots_and_keyboards.bot_command_scope import BotCommandScope
 
 
 class BotCommandScopeDefault(BotCommandScope):

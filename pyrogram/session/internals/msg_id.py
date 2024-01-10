@@ -17,8 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 from datetime import datetime
 from time import perf_counter
+
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +34,7 @@ class MsgId:
     def __new__(cls) -> int:
         now = perf_counter() - cls.reference_clock + cls.server_time
         cls.msg_id_offset = cls.msg_id_offset + 4 if now == cls.last_time else 0
-        msg_id = int(now * 2 ** 32) + cls.msg_id_offset
+        msg_id = int(now * 2**32) + cls.msg_id_offset
         cls.last_time = now
 
         return msg_id

@@ -41,14 +41,11 @@ class GetChatAdminsWithInviteLinks(Scaffold):
             invite links is returned.
         """
         r = await self.send(
-            raw.functions.messages.GetAdminsWithInvites(
-                peer=await self.resolve_peer(chat_id)
-            )
+            raw.functions.messages.GetAdminsWithInvites(peer=await self.resolve_peer(chat_id))
         )
 
         users = {i.id: i for i in r.users}
 
         return types.List(
-            types.ChatAdminWithInviteLinks._parse(self, admin, users)
-            for admin in r.admins
+            types.ChatAdminWithInviteLinks._parse(self, admin, users) for admin in r.admins
         )

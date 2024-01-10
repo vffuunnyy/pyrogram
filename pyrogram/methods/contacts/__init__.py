@@ -16,18 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .add_contact import AddContact
-from .delete_contacts import DeleteContacts
-from .get_contacts import GetContacts
-from .get_contacts_count import GetContactsCount
-from .import_contacts import ImportContacts
+from pyrogram.methods.contacts.add_contact import AddContact
+from pyrogram.methods.contacts.delete_contacts import DeleteContacts
+from pyrogram.methods.contacts.get_contacts import GetContacts
+from pyrogram.methods.contacts.get_contacts_count import GetContactsCount
+from pyrogram.methods.contacts.import_contacts import ImportContacts
 
 
-class Contacts(
-    GetContacts,
-    DeleteContacts,
-    ImportContacts,
-    GetContactsCount,
-    AddContact
-):
+class Contacts(GetContacts, DeleteContacts, ImportContacts, GetContactsCount, AddContact):
     pass

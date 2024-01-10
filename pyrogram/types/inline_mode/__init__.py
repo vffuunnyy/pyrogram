@@ -16,16 +16,23 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .chosen_inline_result import ChosenInlineResult
-from .inline_query import InlineQuery
-from .inline_query_result import InlineQueryResult
-from .inline_query_result_animation import InlineQueryResultAnimation
-from .inline_query_result_article import InlineQueryResultArticle
-from .inline_query_result_audio import InlineQueryResultAudio
-from .inline_query_result_photo import InlineQueryResultPhoto
-from .inline_query_result_video import InlineQueryResultVideo
+from pyrogram.types.inline_mode.chosen_inline_result import ChosenInlineResult
+from pyrogram.types.inline_mode.inline_query import InlineQuery
+from pyrogram.types.inline_mode.inline_query_result import InlineQueryResult
+from pyrogram.types.inline_mode.inline_query_result_animation import InlineQueryResultAnimation
+from pyrogram.types.inline_mode.inline_query_result_article import InlineQueryResultArticle
+from pyrogram.types.inline_mode.inline_query_result_audio import InlineQueryResultAudio
+from pyrogram.types.inline_mode.inline_query_result_photo import InlineQueryResultPhoto
+from pyrogram.types.inline_mode.inline_query_result_video import InlineQueryResultVideo
+
 
 __all__ = [
-    "InlineQuery", "InlineQueryResult", "InlineQueryResultArticle", "InlineQueryResultPhoto",
-    "InlineQueryResultAnimation", "InlineQueryResultAudio", "InlineQueryResultVideo", "ChosenInlineResult"
+    "InlineQuery",
+    "InlineQueryResult",
+    "InlineQueryResultArticle",
+    "InlineQueryResultPhoto",
+    "InlineQueryResultAnimation",
+    "InlineQueryResultAudio",
+    "InlineQueryResultVideo",
+    "ChosenInlineResult",
 ]

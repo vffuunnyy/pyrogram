@@ -16,11 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import List, Optional, Union
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 from pyrogram.scaffold import Scaffold
 
 
@@ -44,7 +43,9 @@ class Filters:
     PINNED = raw.types.InputMessagesFilterPinned()
 
 
-POSSIBLE_VALUES = list(map(lambda x: x.lower(), filter(lambda x: not x.startswith("__"), Filters.__dict__.keys())))
+POSSIBLE_VALUES = list(
+    map(lambda x: x.lower(), filter(lambda x: not x.startswith("__"), Filters.__dict__.keys()))
+)
 
 
 # noinspection PyShadowingBuiltins
@@ -55,13 +56,16 @@ async def get_chunk(
     filter: str = "empty",
     offset: int = 0,
     limit: int = 100,
-    from_user: Union[int, str] = None
-) -> List["types.Message"]:
+    from_user: Union[int, str] = None,
+) -> list["types.Message"]:
     try:
         filter = Filters.__dict__[filter.upper()]
     except KeyError:
-        raise ValueError('Invalid filter "{}". Possible values are: {}'.format(
-            filter, ", ".join(f'"{v}"' for v in POSSIBLE_VALUES))) from None
+        raise ValueError(
+            'Invalid filter "{}". Possible values are: {}'.format(
+                filter, ", ".join(f'"{v}"' for v in POSSIBLE_VALUES)
+            )
+        ) from None
 
     r = await client.send(
         raw.functions.messages.Search(
@@ -75,14 +79,10 @@ async def get_chunk(
             limit=limit,
             min_id=0,
             max_id=0,
-            from_id=(
-                await client.resolve_peer(from_user)
-                if from_user
-                else None
-            ),
-            hash=0
+            from_id=(await client.resolve_peer(from_user) if from_user else None),
+            hash=0,
         ),
-        sleep_threshold=60
+        sleep_threshold=60,
     )
 
     return await utils.parse_messages(client, r)
@@ -97,7 +97,7 @@ class SearchMessages(Scaffold):
         offset: int = 0,
         filter: str = "empty",
         limit: int = 0,
-        from_user: Union[int, str] = None
+        from_user: Union[int, str] = None,
     ) -> Optional[AsyncGenerator["types.Message", None]]:
         """Search for text and media messages inside a specific chat.
 
@@ -177,7 +177,7 @@ class SearchMessages(Scaffold):
                 filter=filter,
                 offset=offset,
                 limit=limit,
-                from_user=from_user
+                from_user=from_user,
             )
 
             if not messages:

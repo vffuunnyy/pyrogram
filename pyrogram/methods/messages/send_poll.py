@@ -16,10 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List
+from typing import List, Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -28,7 +27,7 @@ class SendPoll(Scaffold):
         self,
         chat_id: Union[int, str],
         question: str,
-        options: List[str],
+        options: list[str],
         is_anonymous: bool = True,
         allows_multiple_answers: bool = None,
         type: str = "regular",
@@ -41,8 +40,8 @@ class SendPoll(Scaffold):
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ] = None
+            "types.ForceReply",
+        ] = None,
     ) -> "types.Message":
         """Send a new poll.
 
@@ -112,9 +111,11 @@ class SendPoll(Scaffold):
                         ],
                         multiple_choice=allows_multiple_answers or None,
                         public_voters=not is_anonymous or None,
-                        quiz=type == "quiz" or None
+                        quiz=type == "quiz" or None,
                     ),
-                    correct_answers=None if correct_option_id is None else [bytes([correct_option_id])]
+                    correct_answers=None
+                    if correct_option_id is None
+                    else [bytes([correct_option_id])],
                 ),
                 message="",
                 silent=disable_notification or None,
@@ -122,17 +123,23 @@ class SendPoll(Scaffold):
                 random_id=self.rnd_id(),
                 schedule_date=schedule_date,
                 noforwards=protect_content,
-                reply_markup=await reply_markup.write(self) if reply_markup else None
+                reply_markup=await reply_markup.write(self) if reply_markup else None,
             )
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

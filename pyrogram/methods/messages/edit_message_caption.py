@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List, Optional
+from typing import List, Optional, Union
 
 from pyrogram import types
 from pyrogram.scaffold import Scaffold
@@ -29,8 +29,8 @@ class EditMessageCaption(Scaffold):
         message_id: int,
         caption: str,
         parse_mode: Optional[str] = object,
-        caption_entities: List["types.MessageEntity"] = None,
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        caption_entities: list["types.MessageEntity"] = None,
+        reply_markup: "types.InlineKeyboardMarkup" = None,
     ) -> "types.Message":
         """Edit the caption of media messages.
 
@@ -73,5 +73,5 @@ class EditMessageCaption(Scaffold):
             text=caption,
             parse_mode=parse_mode,
             entities=caption_entities,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )

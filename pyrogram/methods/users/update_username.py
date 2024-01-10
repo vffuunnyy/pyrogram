@@ -23,10 +23,7 @@ from pyrogram.scaffold import Scaffold
 
 
 class UpdateUsername(Scaffold):
-    async def update_username(
-        self,
-        username: Optional[str]
-    ) -> bool:
+    async def update_username(self, username: Optional[str]) -> bool:
         """Update your own username.
 
         This method only works for users, not bots. Bot usernames must be changed via Bot Support or by recreating
@@ -46,10 +43,4 @@ class UpdateUsername(Scaffold):
                 app.update_username("new_username")
         """
 
-        return bool(
-            await self.send(
-                raw.functions.account.UpdateUsername(
-                    username=username or ""
-                )
-            )
-        )
+        return bool(await self.send(raw.functions.account.UpdateUsername(username=username or "")))

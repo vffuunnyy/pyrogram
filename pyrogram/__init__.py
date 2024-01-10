@@ -37,7 +37,8 @@ class ContinuePropagation(StopAsyncIteration):
 
 import asyncio
 
-from .client import Client
+from pyrogram.client import Client
+
 
 # Save the main thread loop for future references
 main_event_loop = asyncio.get_event_loop()

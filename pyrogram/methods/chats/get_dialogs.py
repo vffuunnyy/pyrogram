@@ -17,23 +17,20 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 from typing import List
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 from pyrogram.scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
 
 class GetDialogs(Scaffold):
     async def get_dialogs(
-        self,
-        offset_date: int = 0,
-        limit: int = 100,
-        pinned_only: bool = False
-    ) -> List["types.Dialog"]:
+        self, offset_date: int = 0, limit: int = 100, pinned_only: bool = False
+    ) -> list["types.Dialog"]:
         """Get a chunk of the user's dialogs.
 
         You can get up to 100 dialogs at once.
@@ -67,8 +64,7 @@ class GetDialogs(Scaffold):
 
         if pinned_only:
             r = await self.send(
-                raw.functions.messages.GetPinnedDialogs(folder_id=0),
-                sleep_threshold=60
+                raw.functions.messages.GetPinnedDialogs(folder_id=0), sleep_threshold=60
             )
         else:
             r = await self.send(
@@ -78,9 +74,9 @@ class GetDialogs(Scaffold):
                     offset_peer=raw.types.InputPeerEmpty(),
                     limit=limit,
                     hash=0,
-                    exclude_pinned=True
+                    exclude_pinned=True,
                 ),
-                sleep_threshold=60
+                sleep_threshold=60,
             )
 
         users = {i.id: i for i in r.users}

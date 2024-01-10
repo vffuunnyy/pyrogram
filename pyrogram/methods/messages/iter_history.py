@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Optional, Union
 
 from pyrogram import types
 from pyrogram.scaffold import Scaffold
@@ -30,7 +31,7 @@ class IterHistory(Scaffold):
         offset: int = 0,
         offset_id: int = 0,
         offset_date: int = 0,
-        reverse: bool = False
+        reverse: bool = False,
     ) -> Optional[AsyncGenerator["types.Message", None]]:
         """Iterate through a chat history sequentially.
 
@@ -82,7 +83,7 @@ class IterHistory(Scaffold):
                 offset=offset,
                 offset_id=offset_id,
                 offset_date=offset_date,
-                reverse=reverse
+                reverse=reverse,
             )
 
             if not messages:

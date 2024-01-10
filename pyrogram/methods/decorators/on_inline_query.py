@@ -16,19 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable
+from collections.abc import Callable
 
 import pyrogram
+
 from pyrogram.filters import Filter
 from pyrogram.scaffold import Scaffold
 
 
 class OnInlineQuery(Scaffold):
-    def on_inline_query(
-        self=None,
-        filters=None,
-        group: int = 0
-    ) -> callable:
+    def on_inline_query(self=None, filters=None, group: int = 0) -> callable:
         """Decorator for handling inline queries.
 
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
@@ -50,12 +47,10 @@ class OnInlineQuery(Scaffold):
                 if not hasattr(func, "handlers"):
                     func.handlers = []
 
-                func.handlers.append(
-                    (
-                        pyrogram.handlers.InlineQueryHandler(func, self),
-                        group if filters is None else filters
-                    )
-                )
+                func.handlers.append((
+                    pyrogram.handlers.InlineQueryHandler(func, self),
+                    group if filters is None else filters,
+                ))
 
             return func
 

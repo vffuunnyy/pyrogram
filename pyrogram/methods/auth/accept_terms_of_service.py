@@ -29,11 +29,7 @@ class AcceptTermsOfService(Scaffold):
                 The terms of service identifier.
         """
         r = await self.send(
-            raw.functions.help.AcceptTermsOfService(
-                id=raw.types.DataJSON(
-                    data=terms_of_service_id
-                )
-            )
+            raw.functions.help.AcceptTermsOfService(id=raw.types.DataJSON(data=terms_of_service_id))
         )
 
         return bool(r)

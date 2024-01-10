@@ -16,10 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, List, Union, BinaryIO
+from typing import BinaryIO, List, Optional, Union
 
-from .input_media import InputMedia
-from ..messages_and_media import MessageEntity
+from pyrogram.types.input_media.input_media import InputMedia
+from pyrogram.types.messages_and_media import MessageEntity
 
 
 class InputMediaDocument(InputMedia):
@@ -60,7 +60,7 @@ class InputMediaDocument(InputMedia):
         thumb: str = None,
         caption: str = "",
         parse_mode: Optional[str] = object,
-        caption_entities: List[MessageEntity] = None
+        caption_entities: list[MessageEntity] = None,
     ):
         super().__init__(media, caption, parse_mode, caption_entities)
 

@@ -18,12 +18,10 @@
 
 import os
 import re
-from typing import Union, BinaryIO, List, Optional
 
-from pyrogram import StopTransmission
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from typing import BinaryIO, List, Optional, Union
+
+from pyrogram import StopTransmission, raw, types, utils
 from pyrogram.errors import FilePartMissing
 from pyrogram.file_id import FileType
 from pyrogram.scaffold import Scaffold
@@ -36,7 +34,7 @@ class SendAudio(Scaffold):
         audio: Union[str, BinaryIO],
         caption: str = "",
         parse_mode: Optional[str] = object,
-        caption_entities: List["types.MessageEntity"] = None,
+        caption_entities: list["types.MessageEntity"] = None,
         duration: int = 0,
         performer: str = None,
         title: str = None,
@@ -50,10 +48,10 @@ class SendAudio(Scaffold):
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply"
+            "types.ForceReply",
         ] = None,
         progress: callable = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
     ) -> Optional["types.Message"]:
         """Send audio files.
 
@@ -173,24 +171,24 @@ class SendAudio(Scaffold):
             if isinstance(audio, str):
                 if os.path.isfile(audio):
                     thumb = await self.save_file(thumb)
-                    file = await self.save_file(audio, progress=progress, progress_args=progress_args)
+                    file = await self.save_file(
+                        audio, progress=progress, progress_args=progress_args
+                    )
                     media = raw.types.InputMediaUploadedDocument(
                         mime_type=self.guess_mime_type(audio) or "audio/mpeg",
                         file=file,
                         thumb=thumb,
                         attributes=[
                             raw.types.DocumentAttributeAudio(
-                                duration=duration,
-                                performer=performer,
-                                title=title
+                                duration=duration, performer=performer, title=title
                             ),
-                            raw.types.DocumentAttributeFilename(file_name=file_name or os.path.basename(audio))
-                        ]
+                            raw.types.DocumentAttributeFilename(
+                                file_name=file_name or os.path.basename(audio)
+                            ),
+                        ],
                     )
                 elif re.match("^https?://", audio):
-                    media = raw.types.InputMediaDocumentExternal(
-                        url=audio
-                    )
+                    media = raw.types.InputMediaDocumentExternal(url=audio)
                 else:
                     media = utils.get_input_media_from_file_id(audio, FileType.AUDIO)
             else:
@@ -202,12 +200,10 @@ class SendAudio(Scaffold):
                     thumb=thumb,
                     attributes=[
                         raw.types.DocumentAttributeAudio(
-                            duration=duration,
-                            performer=performer,
-                            title=title
+                            duration=duration, performer=performer, title=title
                         ),
-                        raw.types.DocumentAttributeFilename(file_name=file_name or audio.name)
-                    ]
+                        raw.types.DocumentAttributeFilename(file_name=file_name or audio.name),
+                    ],
                 )
 
             while True:
@@ -222,21 +218,29 @@ class SendAudio(Scaffold):
                             schedule_date=schedule_date,
                             noforwards=protect_content,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
-                            **await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
+                            **await utils.parse_text_entities(
+                                self, caption, parse_mode, caption_entities
+                            ),
                         )
                     )
                 except FilePartMissing as e:
                     await self.save_file(audio, file_id=file.id, file_part=e.x)
                 else:
                     for i in r.updates:
-                        if isinstance(i, (raw.types.UpdateNewMessage,
-                                          raw.types.UpdateNewChannelMessage,
-                                          raw.types.UpdateNewScheduledMessage)):
+                        if isinstance(
+                            i,
+                            (
+                                raw.types.UpdateNewMessage,
+                                raw.types.UpdateNewChannelMessage,
+                                raw.types.UpdateNewScheduledMessage,
+                            ),
+                        ):
                             return await types.Message._parse(
-                                self, i.message,
+                                self,
+                                i.message,
                                 {i.id: i for i in r.users},
                                 {i.id: i for i in r.chats},
-                                is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                                is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                             )
         except StopTransmission:
             return None

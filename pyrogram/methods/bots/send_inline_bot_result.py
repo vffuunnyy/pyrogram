@@ -29,7 +29,7 @@ class SendInlineBotResult(Scaffold):
         query_id: int,
         result_id: str,
         disable_notification: bool = None,
-        reply_to_message_id: int = None
+        reply_to_message_id: int = None,
     ):
         """Send an inline bot result.
         Bot results can be retrieved using :meth:`~pyrogram.Client.get_inline_bot_results`
@@ -68,6 +68,6 @@ class SendInlineBotResult(Scaffold):
                 id=result_id,
                 random_id=self.rnd_id(),
                 silent=disable_notification or None,
-                reply_to_msg_id=reply_to_message_id
+                reply_to_msg_id=reply_to_message_id,
             )
         )

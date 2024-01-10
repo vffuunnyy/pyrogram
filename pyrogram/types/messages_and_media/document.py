@@ -19,10 +19,10 @@
 from typing import List
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+
+from pyrogram import raw, types
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class Document(Object):
@@ -62,7 +62,7 @@ class Document(Object):
         mime_type: str = None,
         file_size: int = None,
         date: int = None,
-        thumbs: List["types.Thumbnail"] = None
+        thumbs: list["types.Thumbnail"] = None,
     ):
         super().__init__(client)
 
@@ -82,16 +82,15 @@ class Document(Object):
                 dc_id=document.dc_id,
                 media_id=document.id,
                 access_hash=document.access_hash,
-                file_reference=document.file_reference
+                file_reference=document.file_reference,
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT,
-                media_id=document.id
+                file_unique_type=FileUniqueType.DOCUMENT, media_id=document.id
             ).encode(),
             file_name=file_name,
             mime_type=document.mime_type,
             file_size=document.size,
             date=document.date,
             thumbs=types.Thumbnail._parse(client, document),
-            client=client
+            client=client,
         )

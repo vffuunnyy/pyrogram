@@ -16,9 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
+from pyrogram import raw, types
+from pyrogram.types.object import Object
 
 
 class InviteLinkImporter(Object):
@@ -47,8 +46,7 @@ class InviteLinkImporter(Object):
         for j in invite_importers.importers:
             importers.append(
                 InviteLinkImporter(
-                    date=j.date,
-                    user=types.User._parse(client=None, user=d[j.user_id])
+                    date=j.date, user=types.User._parse(client=None, user=d[j.user_id])
                 )
             )
 

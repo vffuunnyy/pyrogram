@@ -19,9 +19,10 @@
 from typing import List, Optional, Union
 
 import pyrogram
+
 from pyrogram import raw
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType, ThumbnailSource
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class Thumbnail(Object):
@@ -53,7 +54,7 @@ class Thumbnail(Object):
         file_unique_id: str,
         width: int,
         height: int,
-        file_size: int
+        file_size: int,
     ):
         super().__init__(client)
 
@@ -64,7 +65,9 @@ class Thumbnail(Object):
         self.file_size = file_size
 
     @staticmethod
-    def _parse(client, media: Union["raw.types.Photo", "raw.types.Document"]) -> Optional[List["Thumbnail"]]:
+    def _parse(
+        client, media: Union["raw.types.Photo", "raw.types.Document"]
+    ) -> Optional[list["Thumbnail"]]:
         if isinstance(media, raw.types.Photo):
             raw_thumbs = [i for i in media.sizes if isinstance(i, raw.types.PhotoSize)]
             raw_thumbs.sort(key=lambda p: p.size)
@@ -75,7 +78,7 @@ class Thumbnail(Object):
             raw_thumbs = media.thumbs
             file_type = FileType.THUMBNAIL
         else:
-            return
+            return None
 
         parsed_thumbs = []
 
@@ -95,16 +98,15 @@ class Thumbnail(Object):
                         thumbnail_source=ThumbnailSource.THUMBNAIL,
                         thumbnail_size=thumb.type,
                         volume_id=0,
-                        local_id=0
+                        local_id=0,
                     ).encode(),
                     file_unique_id=FileUniqueId(
-                        file_unique_type=FileUniqueType.DOCUMENT,
-                        media_id=media.id
+                        file_unique_type=FileUniqueType.DOCUMENT, media_id=media.id
                     ).encode(),
                     width=thumb.w,
                     height=thumb.h,
                     file_size=thumb.size,
-                    client=client
+                    client=client,
                 )
             )
 

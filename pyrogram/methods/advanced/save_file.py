@@ -23,14 +23,15 @@ import io
 import logging
 import math
 import os
+
 from hashlib import md5
 from pathlib import PurePath
-from typing import Union, BinaryIO
+from typing import BinaryIO, Union
 
-from pyrogram import StopTransmission
-from pyrogram import raw
+from pyrogram import StopTransmission, raw
 from pyrogram.scaffold import Scaffold
 from pyrogram.session import Session
+
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class SaveFile(Scaffold):
         file_id: int = None,
         file_part: int = 0,
         progress: callable = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
     ):
         """Upload a file onto Telegram servers, without actually sending the message to anyone.
         Useful whenever an InputFile type is required.
@@ -114,7 +115,9 @@ class SaveFile(Scaffold):
         elif isinstance(path, io.IOBase):
             fp = path
         else:
-            raise ValueError("Invalid file. Expected a file path as string or a binary (not text) file pointer")
+            raise ValueError(
+                "Invalid file. Expected a file path as string or a binary (not text) file pointer"
+            )
 
         file_name = getattr(fp, "name", "file.jpg")
 
@@ -137,11 +140,17 @@ class SaveFile(Scaffold):
         md5_sum = md5() if not is_big and not is_missing_part else None
         pool = [
             Session(
-                self, await self.storage.dc_id(), await self.storage.auth_key(),
-                await self.storage.test_mode(), is_media=True
-            ) for _ in range(pool_size)
+                self,
+                await self.storage.dc_id(),
+                await self.storage.auth_key(),
+                await self.storage.test_mode(),
+                is_media=True,
+            )
+            for _ in range(pool_size)
         ]
-        workers = [self.loop.create_task(worker(session)) for session in pool for _ in range(workers_count)]
+        workers = [
+            self.loop.create_task(worker(session)) for session in pool for _ in range(workers_count)
+        ]
         queue = asyncio.Queue(16)
 
         try:
@@ -163,19 +172,17 @@ class SaveFile(Scaffold):
                         file_id=file_id,
                         file_part=file_part,
                         file_total_parts=file_total_parts,
-                        bytes=chunk
+                        bytes=chunk,
                     )
                 else:
                     rpc = raw.functions.upload.SaveFilePart(
-                        file_id=file_id,
-                        file_part=file_part,
-                        bytes=chunk
+                        file_id=file_id, file_part=file_part, bytes=chunk
                     )
 
                 await queue.put(rpc)
 
                 if is_missing_part:
-                    return
+                    return None
 
                 if not is_big and not is_missing_part:
                     md5_sum.update(chunk)
@@ -184,10 +191,7 @@ class SaveFile(Scaffold):
 
                 if progress:
                     func = functools.partial(
-                        progress,
-                        min(file_part * part_size, file_size),
-                        file_size,
-                        *progress_args
+                        progress, min(file_part * part_size, file_size), file_size, *progress_args
                     )
 
                     if inspect.iscoroutinefunction(progress):
@@ -204,14 +208,10 @@ class SaveFile(Scaffold):
                     id=file_id,
                     parts=file_total_parts,
                     name=file_name,
-
                 )
             else:
                 return raw.types.InputFile(
-                    id=file_id,
-                    parts=file_total_parts,
-                    name=file_name,
-                    md5_checksum=md5_sum
+                    id=file_id, parts=file_total_parts, name=file_name, md5_checksum=md5_sum
                 )
         finally:
             for _ in workers:

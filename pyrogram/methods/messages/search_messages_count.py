@@ -19,8 +19,8 @@
 from typing import Union
 
 from pyrogram import raw
+from pyrogram.methods.messages.search_messages import POSSIBLE_VALUES, Filters
 from pyrogram.scaffold import Scaffold
-from .search_messages import Filters, POSSIBLE_VALUES
 
 
 class SearchMessagesCount(Scaffold):
@@ -29,7 +29,7 @@ class SearchMessagesCount(Scaffold):
         chat_id: Union[int, str],
         query: str = "",
         filter: str = "empty",
-        from_user: Union[int, str] = None
+        from_user: Union[int, str] = None,
     ) -> int:
         """Get the count of messages resulting from a search inside a chat.
 
@@ -77,8 +77,11 @@ class SearchMessagesCount(Scaffold):
         try:
             filter = Filters.__dict__[filter.upper()]
         except KeyError:
-            raise ValueError('Invalid filter "{}". Possible values are: {}'.format(
-                filter, ", ".join(f'"{v}"' for v in POSSIBLE_VALUES))) from None
+            raise ValueError(
+                'Invalid filter "{}". Possible values are: {}'.format(
+                    filter, ", ".join(f'"{v}"' for v in POSSIBLE_VALUES)
+                )
+            ) from None
 
         r = await self.send(
             raw.functions.messages.Search(
@@ -92,12 +95,8 @@ class SearchMessagesCount(Scaffold):
                 limit=1,
                 min_id=0,
                 max_id=0,
-                from_id=(
-                    await self.resolve_peer(from_user)
-                    if from_user
-                    else None
-                ),
-                hash=0
+                from_id=(await self.resolve_peer(from_user) if from_user else None),
+                hash=0,
             )
         )
 

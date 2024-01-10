@@ -18,16 +18,12 @@
 
 from typing import List, Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
 class GetSendAsChats(Scaffold):
-    async def get_send_as_chats(
-        self,
-        chat_id: Union[int, str]
-    ) -> List["types.Chat"]:
+    async def get_send_as_chats(self, chat_id: Union[int, str]) -> list["types.Chat"]:
         """Get the list of "send_as" chats available.
 
         Parameters:
@@ -43,11 +39,7 @@ class GetSendAsChats(Scaffold):
                 chats = app.get_send_as_chats(chat_id)
                 print(chats)
         """
-        r = await self.send(
-            raw.functions.channels.GetSendAs(
-                peer=await self.resolve_peer(chat_id)
-            )
-        )
+        r = await self.send(raw.functions.channels.GetSendAs(peer=await self.resolve_peer(chat_id)))
 
         users = {u.id: u for u in r.users}
         chats = {c.id: c for c in r.chats}

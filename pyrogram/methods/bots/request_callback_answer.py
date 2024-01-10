@@ -28,7 +28,7 @@ class RequestCallbackAnswer(Scaffold):
         chat_id: Union[int, str],
         message_id: int,
         callback_data: Union[str, bytes],
-        timeout: int = 10
+        timeout: int = 10,
     ):
         """Request a callback answer from bots.
         This is the equivalent of clicking an inline button containing callback data.
@@ -66,10 +66,8 @@ class RequestCallbackAnswer(Scaffold):
 
         return await self.send(
             raw.functions.messages.GetBotCallbackAnswer(
-                peer=await self.resolve_peer(chat_id),
-                msg_id=message_id,
-                data=data
+                peer=await self.resolve_peer(chat_id), msg_id=message_id, data=data
             ),
             retries=0,
-            timeout=timeout
+            timeout=timeout,
         )

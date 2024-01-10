@@ -16,10 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Iterable, List
+from collections.abc import Iterable
+from typing import List, Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -31,8 +31,8 @@ class ForwardMessages(Scaffold):
         message_ids: Union[int, Iterable[int]],
         disable_notification: bool = None,
         schedule_date: int = None,
-        protect_content: bool = None
-    ) -> Union["types.Message", List["types.Message"]]:
+        protect_content: bool = None,
+    ) -> Union["types.Message", list["types.Message"]]:
         """Forward messages of any kind.
 
         Parameters:
@@ -86,7 +86,7 @@ class ForwardMessages(Scaffold):
                 silent=disable_notification or None,
                 random_id=[self.rnd_id() for _ in message_ids],
                 schedule_date=schedule_date,
-                noforwards=protect_content
+                noforwards=protect_content,
             )
         )
 
@@ -96,14 +96,14 @@ class ForwardMessages(Scaffold):
         chats = {i.id: i for i in r.chats}
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
-                forwarded_messages.append(
-                    await types.Message._parse(
-                        self, i.message,
-                        users, chats
-                    )
-                )
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
+                forwarded_messages.append(await types.Message._parse(self, i.message, users, chats))
 
         return types.List(forwarded_messages) if is_iterable else forwarded_messages[0]

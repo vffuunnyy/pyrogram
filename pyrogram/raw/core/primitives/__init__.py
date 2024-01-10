@@ -16,9 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .bool import Bool, BoolFalse, BoolTrue
-from .bytes import Bytes
-from .double import Double
-from .int import Int, Long, Int128, Int256
-from .string import String
-from .vector import Vector
+from pyrogram.raw.core.primitives.bool import Bool, BoolFalse, BoolTrue
+from pyrogram.raw.core.primitives.bytes import Bytes
+from pyrogram.raw.core.primitives.double import Double
+from pyrogram.raw.core.primitives.int import Int, Int128, Int256, Long
+from pyrogram.raw.core.primitives.string import String
+from pyrogram.raw.core.primitives.vector import Vector

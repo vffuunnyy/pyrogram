@@ -19,8 +19,10 @@
 from uuid import uuid4
 
 import pyrogram
+
 from pyrogram import types
-from ..object import Object
+from pyrogram.types.object import Object
+
 
 """- :obj:`~pyrogram.types.InlineQueryResultCachedAudio`
     - :obj:`~pyrogram.types.InlineQueryResultCachedDocument`
@@ -58,7 +60,7 @@ class InlineQueryResult(Object):
         type: str,
         id: str,
         input_message_content: "types.InputMessageContent",
-        reply_markup: "types.InlineKeyboardMarkup"
+        reply_markup: "types.InlineKeyboardMarkup",
     ):
         super().__init__()
 

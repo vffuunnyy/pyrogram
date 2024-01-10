@@ -19,11 +19,11 @@
 from typing import List
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+
+from pyrogram import raw, types
 from pyrogram.errors import StickersetInvalid
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class Sticker(Object):
@@ -89,7 +89,7 @@ class Sticker(Object):
         date: int = None,
         emoji: str = None,
         set_name: str = None,
-        thumbs: List["types.Thumbnail"] = None
+        thumbs: list["types.Thumbnail"] = None,
     ):
         super().__init__(client)
 
@@ -121,15 +121,16 @@ class Sticker(Object):
             if name is not None:
                 return name
 
-            name = (await send(
-                raw.functions.messages.GetStickerSet(
-                    stickerset=raw.types.InputStickerSetID(
-                        id=set_id,
-                        access_hash=set_access_hash
-                    ),
-                    hash=0
+            name = (
+                await send(
+                    raw.functions.messages.GetStickerSet(
+                        stickerset=raw.types.InputStickerSetID(
+                            id=set_id, access_hash=set_access_hash
+                        ),
+                        hash=0,
+                    )
                 )
-            )).set.short_name
+            ).set.short_name
 
             Sticker.cache[(set_id, set_access_hash)] = name
 
@@ -147,7 +148,7 @@ class Sticker(Object):
         sticker: "raw.types.Document",
         image_size_attributes: "raw.types.DocumentAttributeImageSize",
         sticker_attributes: "raw.types.DocumentAttributeSticker",
-        file_name: str
+        file_name: str,
     ) -> "Sticker":
         sticker_set = sticker_attributes.stickerset
 
@@ -163,11 +164,10 @@ class Sticker(Object):
                 dc_id=sticker.dc_id,
                 media_id=sticker.id,
                 access_hash=sticker.access_hash,
-                file_reference=sticker.file_reference
+                file_reference=sticker.file_reference,
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT,
-                media_id=sticker.id
+                file_unique_type=FileUniqueType.DOCUMENT, media_id=sticker.id
             ).encode(),
             width=image_size_attributes.w if image_size_attributes else 512,
             height=image_size_attributes.h if image_size_attributes else 512,
@@ -181,5 +181,5 @@ class Sticker(Object):
             file_name=file_name,
             date=sticker.date,
             thumbs=types.Thumbnail._parse(client, sticker),
-            client=client
+            client=client,
         )

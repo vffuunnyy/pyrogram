@@ -16,17 +16,17 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .answer_callback_query import AnswerCallbackQuery
-from .answer_inline_query import AnswerInlineQuery
-from .delete_bot_commands import DeleteBotCommands
-from .get_bot_commands import GetBotCommands
-from .get_game_high_scores import GetGameHighScores
-from .get_inline_bot_results import GetInlineBotResults
-from .request_callback_answer import RequestCallbackAnswer
-from .send_game import SendGame
-from .send_inline_bot_result import SendInlineBotResult
-from .set_bot_commands import SetBotCommands
-from .set_game_score import SetGameScore
+from pyrogram.methods.bots.answer_callback_query import AnswerCallbackQuery
+from pyrogram.methods.bots.answer_inline_query import AnswerInlineQuery
+from pyrogram.methods.bots.delete_bot_commands import DeleteBotCommands
+from pyrogram.methods.bots.get_bot_commands import GetBotCommands
+from pyrogram.methods.bots.get_game_high_scores import GetGameHighScores
+from pyrogram.methods.bots.get_inline_bot_results import GetInlineBotResults
+from pyrogram.methods.bots.request_callback_answer import RequestCallbackAnswer
+from pyrogram.methods.bots.send_game import SendGame
+from pyrogram.methods.bots.send_inline_bot_result import SendInlineBotResult
+from pyrogram.methods.bots.set_bot_commands import SetBotCommands
+from pyrogram.methods.bots.set_game_score import SetGameScore
 
 
 class Bots(
@@ -40,6 +40,6 @@ class Bots(
     GetGameHighScores,
     SetBotCommands,
     GetBotCommands,
-    DeleteBotCommands
+    DeleteBotCommands,
 ):
     pass

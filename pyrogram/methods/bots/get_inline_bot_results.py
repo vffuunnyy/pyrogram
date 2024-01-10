@@ -30,7 +30,7 @@ class GetInlineBotResults(Scaffold):
         query: str = "",
         offset: str = "",
         latitude: float = None,
-        longitude: float = None
+        longitude: float = None,
     ):
         """Get bot results via inline queries.
         You can then send a result using :meth:`~pyrogram.Client.send_inline_bot_result`
@@ -76,10 +76,9 @@ class GetInlineBotResults(Scaffold):
                     peer=raw.types.InputPeerSelf(),
                     query=query,
                     offset=offset,
-                    geo_point=raw.types.InputGeoPoint(
-                        lat=latitude,
-                        long=longitude
-                    ) if (latitude is not None and longitude is not None) else None
+                    geo_point=raw.types.InputGeoPoint(lat=latitude, long=longitude)
+                    if (latitude is not None and longitude is not None)
+                    else None,
                 )
             )
         except UnknownError as e:

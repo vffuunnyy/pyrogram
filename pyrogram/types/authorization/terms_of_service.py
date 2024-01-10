@@ -18,9 +18,8 @@
 
 from typing import List
 
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
+from pyrogram import raw, types
+from pyrogram.types.object import Object
 
 
 class TermsOfService(Object):
@@ -37,7 +36,7 @@ class TermsOfService(Object):
             Special entities like URLs that appear in the text.
     """
 
-    def __init__(self, *, id: str, text: str, entities: List["types.MessageEntity"]):
+    def __init__(self, *, id: str, text: str, entities: list["types.MessageEntity"]):
         super().__init__()
 
         self.id = id
@@ -50,7 +49,6 @@ class TermsOfService(Object):
             id=terms_of_service.id.data,
             text=terms_of_service.text,
             entities=[
-                types.MessageEntity._parse(None, entity, {})
-                for entity in terms_of_service.entities
-            ]
+                types.MessageEntity._parse(None, entity, {}) for entity in terms_of_service.entities
+            ],
         )

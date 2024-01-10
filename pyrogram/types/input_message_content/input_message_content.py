@@ -18,7 +18,8 @@
 
 import pyrogram
 
-from ..object import Object
+from pyrogram.types.object import Object
+
 
 """- :obj:`~pyrogram.types.InputLocationMessageContent`
     - :obj:`~pyrogram.types.InputVenueMessageContent`

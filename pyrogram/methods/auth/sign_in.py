@@ -17,21 +17,19 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
 
 class SignIn(Scaffold):
     async def sign_in(
-        self,
-        phone_number: str,
-        phone_code_hash: str,
-        phone_code: str
+        self, phone_number: str, phone_code_hash: str, phone_code: str
     ) -> Union["types.User", "types.TermsOfService", bool]:
         """Authorize a user in Telegram with a valid confirmation code.
 
@@ -60,9 +58,7 @@ class SignIn(Scaffold):
 
         r = await self.send(
             raw.functions.auth.SignIn(
-                phone_number=phone_number,
-                phone_code_hash=phone_code_hash,
-                phone_code=phone_code
+                phone_number=phone_number, phone_code_hash=phone_code_hash, phone_code=phone_code
             )
         )
 

@@ -23,10 +23,7 @@ from pyrogram.scaffold import Scaffold
 
 
 class GetChatMembersCount(Scaffold):
-    async def get_chat_members_count(
-        self,
-        chat_id: Union[int, str]
-    ) -> int:
+    async def get_chat_members_count(self, chat_id: Union[int, str]) -> int:
         """Get the number of members in a chat.
 
         Parameters:
@@ -48,19 +45,11 @@ class GetChatMembersCount(Scaffold):
         peer = await self.resolve_peer(chat_id)
 
         if isinstance(peer, raw.types.InputPeerChat):
-            r = await self.send(
-                raw.functions.messages.GetChats(
-                    id=[peer.chat_id]
-                )
-            )
+            r = await self.send(raw.functions.messages.GetChats(id=[peer.chat_id]))
 
             return r.chats[0].participants_count
         elif isinstance(peer, raw.types.InputPeerChannel):
-            r = await self.send(
-                raw.functions.channels.GetFullChannel(
-                    channel=peer
-                )
-            )
+            r = await self.send(raw.functions.channels.GetFullChannel(channel=peer))
 
             return r.full_chat.participants_count
         else:

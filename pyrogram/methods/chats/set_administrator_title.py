@@ -57,12 +57,11 @@ class SetAdministratorTitle(Scaffold):
         chat_id = await self.resolve_peer(chat_id)
         user_id = await self.resolve_peer(user_id)
 
-        r = (await self.send(
-            raw.functions.channels.GetParticipant(
-                channel=chat_id,
-                participant=user_id
+        r = (
+            await self.send(
+                raw.functions.channels.GetParticipant(channel=chat_id, participant=user_id)
             )
-        )).participant
+        ).participant
 
         if isinstance(r, raw.types.ChannelParticipantCreator):
             admin_rights = raw.types.ChatAdminRights(
@@ -78,7 +77,9 @@ class SetAdministratorTitle(Scaffold):
         elif isinstance(r, raw.types.ChannelParticipantAdmin):
             admin_rights = r.admin_rights
         else:
-            raise ValueError("Custom titles can only be applied to owners or administrators of supergroups")
+            raise ValueError(
+                "Custom titles can only be applied to owners or administrators of supergroups"
+            )
 
         if not admin_rights.change_info:
             admin_rights.change_info = None
@@ -106,10 +107,7 @@ class SetAdministratorTitle(Scaffold):
 
         await self.send(
             raw.functions.channels.EditAdmin(
-                channel=chat_id,
-                user_id=user_id,
-                admin_rights=admin_rights,
-                rank=title
+                channel=chat_id, user_id=user_id, admin_rights=admin_rights, rank=title
             )
         )
 

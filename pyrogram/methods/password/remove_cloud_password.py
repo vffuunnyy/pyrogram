@@ -22,10 +22,7 @@ from pyrogram.utils import compute_password_check
 
 
 class RemoveCloudPassword(Scaffold):
-    async def remove_cloud_password(
-        self,
-        password: str
-    ) -> bool:
+    async def remove_cloud_password(self, password: str) -> bool:
         """Turn off the Two-Step Verification security feature (Cloud Password) on your account.
 
         Parameters:
@@ -52,10 +49,8 @@ class RemoveCloudPassword(Scaffold):
             raw.functions.account.UpdatePasswordSettings(
                 password=compute_password_check(r, password),
                 new_settings=raw.types.account.PasswordInputSettings(
-                    new_algo=raw.types.PasswordKdfAlgoUnknown(),
-                    new_password_hash=b"",
-                    hint=""
-                )
+                    new_algo=raw.types.PasswordKdfAlgoUnknown(), new_password_hash=b"", hint=""
+                ),
             )
         )
 

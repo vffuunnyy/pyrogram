@@ -16,19 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List
+from typing import List, Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
 class VotePoll(Scaffold):
     async def vote_poll(
-        self,
-        chat_id: Union[int, str],
-        message_id: id,
-        options: Union[int, List[int]]
+        self, chat_id: Union[int, str], message_id: id, options: Union[int, list[int]]
     ) -> "types.Poll":
         """Vote a poll.
 
@@ -60,7 +56,7 @@ class VotePoll(Scaffold):
             raw.functions.messages.SendVote(
                 peer=await self.resolve_peer(chat_id),
                 msg_id=message_id,
-                options=[poll.options[option].data for option in options]
+                options=[poll.options[option].data for option in options],
             )
         )
 

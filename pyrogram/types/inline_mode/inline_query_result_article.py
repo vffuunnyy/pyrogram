@@ -17,10 +17,9 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
 
-from .inline_query_result import InlineQueryResult
+from pyrogram import raw, types
+from pyrogram.types.inline_mode.inline_query_result import InlineQueryResult
 
 
 class InlineQueryResultArticle(InlineQueryResult):
@@ -58,7 +57,7 @@ class InlineQueryResultArticle(InlineQueryResult):
         reply_markup: "types.InlineKeyboardMarkup" = None,
         url: str = None,
         description: str = None,
-        thumb_url: str = None
+        thumb_url: str = None,
     ):
         super().__init__("article", id, input_message_content, reply_markup)
 
@@ -76,9 +75,8 @@ class InlineQueryResultArticle(InlineQueryResult):
             description=self.description,
             url=self.url,
             thumb=raw.types.InputWebDocument(
-                url=self.thumb_url,
-                size=0,
-                mime_type="image/jpeg",
-                attributes=[]
-            ) if self.thumb_url else None
+                url=self.thumb_url, size=0, mime_type="image/jpeg", attributes=[]
+            )
+            if self.thumb_url
+            else None,
         )

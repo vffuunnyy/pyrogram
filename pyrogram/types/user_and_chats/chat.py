@@ -16,13 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List, Generator, Optional
+from collections.abc import Generator
+from typing import List, Optional, Union
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
-from ..object import Object
+
+from pyrogram import raw, types, utils
+from pyrogram.types.object import Object
 
 
 class Chat(Object):
@@ -156,12 +156,12 @@ class Chat(Object):
         sticker_set_name: str = None,
         can_set_sticker_set: bool = None,
         members_count: int = None,
-        restrictions: List["types.Restriction"] = None,
+        restrictions: list["types.Restriction"] = None,
         permissions: "types.ChatPermissions" = None,
         distance: int = None,
         linked_chat: "types.Chat" = None,
         send_as_chat: "types.Chat" = None,
-        available_reactions: List[str] = None
+        available_reactions: list[str] = None,
     ):
         super().__init__(client)
 
@@ -210,9 +210,10 @@ class Chat(Object):
             first_name=user.first_name,
             last_name=user.last_name,
             photo=types.ChatPhoto._parse(client, user.photo, peer_id, user.access_hash),
-            restrictions=types.List([types.Restriction._parse(r) for r in user.restriction_reason]) or None,
+            restrictions=types.List([types.Restriction._parse(r) for r in user.restriction_reason])
+            or None,
             dc_id=getattr(getattr(user, "photo", None), "dc_id", None),
-            client=client
+            client=client,
         )
 
     @staticmethod
@@ -229,7 +230,7 @@ class Chat(Object):
             members_count=getattr(chat, "participants_count", None),
             dc_id=getattr(getattr(chat, "photo", None), "dc_id", None),
             has_protected_content=getattr(chat, "noforwards", None),
-            client=client
+            client=client,
         )
 
     @staticmethod
@@ -247,14 +248,18 @@ class Chat(Object):
             is_fake=getattr(channel, "fake", None),
             title=channel.title,
             username=getattr(channel, "username", None),
-            photo=types.ChatPhoto._parse(client, getattr(channel, "photo", None), peer_id,
-                                         getattr(channel, "access_hash", 0)),
-            restrictions=types.List([types.Restriction._parse(r) for r in restriction_reason]) or None,
-            permissions=types.ChatPermissions._parse(getattr(channel, "default_banned_rights", None)),
+            photo=types.ChatPhoto._parse(
+                client, getattr(channel, "photo", None), peer_id, getattr(channel, "access_hash", 0)
+            ),
+            restrictions=types.List([types.Restriction._parse(r) for r in restriction_reason])
+            or None,
+            permissions=types.ChatPermissions._parse(
+                getattr(channel, "default_banned_rights", None)
+            ),
             members_count=getattr(channel, "participants_count", None),
             dc_id=getattr(getattr(channel, "photo", None), "dc_id", None),
             has_protected_content=getattr(channel, "noforwards", None),
-            client=client
+            client=client,
         )
 
     @staticmethod
@@ -263,7 +268,7 @@ class Chat(Object):
         message: Union[raw.types.Message, raw.types.MessageService],
         users: dict,
         chats: dict,
-        is_chat: bool
+        is_chat: bool,
     ) -> "Chat":
         from_id = utils.get_raw_peer_id(message.from_id)
         peer_id = utils.get_raw_peer_id(message.peer_id)
@@ -287,7 +292,9 @@ class Chat(Object):
             return Chat._parse_channel_chat(client, chats[peer.channel_id])
 
     @staticmethod
-    async def _parse_full(client, chat_full: Union[raw.types.messages.ChatFull, raw.types.users.UserFull]) -> "Chat":
+    async def _parse_full(
+        client, chat_full: Union[raw.types.messages.ChatFull, raw.types.users.UserFull]
+    ) -> "Chat":
         users = {u.id: u for u in chat_full.users}
         chats = {c.id: c for c in chat_full.chats}
 
@@ -299,8 +306,7 @@ class Chat(Object):
 
             if full_user.pinned_msg_id:
                 parsed_chat.pinned_message = await client.get_messages(
-                    parsed_chat.id,
-                    message_ids=full_user.pinned_msg_id
+                    parsed_chat.id, message_ids=full_user.pinned_msg_id
                 )
         else:
             full_chat = chat_full.full_chat
@@ -337,8 +343,7 @@ class Chat(Object):
 
             if full_chat.pinned_msg_id:
                 parsed_chat.pinned_message = await client.get_messages(
-                    parsed_chat.id,
-                    message_ids=full_chat.pinned_msg_id
+                    parsed_chat.id, message_ids=full_chat.pinned_msg_id
                 )
 
             if isinstance(full_chat.exported_invite, raw.types.ChatInviteExported):
@@ -349,7 +354,9 @@ class Chat(Object):
         return parsed_chat
 
     @staticmethod
-    def _parse_chat(client, chat: Union[raw.types.Chat, raw.types.User, raw.types.Channel]) -> "Chat":
+    def _parse_chat(
+        client, chat: Union[raw.types.Chat, raw.types.User, raw.types.Channel]
+    ) -> "Chat":
         if isinstance(chat, raw.types.Chat):
             return Chat._parse_chat_chat(client, chat)
         elif isinstance(chat, raw.types.User):
@@ -437,10 +444,7 @@ class Chat(Object):
             ValueError: In case a chat_id belongs to user.
         """
 
-        return await self._client.set_chat_title(
-            chat_id=self.id,
-            title=title
-        )
+        return await self._client.set_chat_title(chat_id=self.id, title=title)
 
     async def set_description(self, description: str) -> bool:
         """Bound method *set_description* of :obj:`~pyrogram.types.Chat`.
@@ -471,10 +475,7 @@ class Chat(Object):
             ValueError: If a chat_id doesn't belong to a supergroup or a channel.
         """
 
-        return await self._client.set_chat_description(
-            chat_id=self.id,
-            description=description
-        )
+        return await self._client.set_chat_description(chat_id=self.id, description=description)
 
     async def set_photo(self, photo: str) -> bool:
         """Bound method *set_photo* of :obj:`~pyrogram.types.Chat`.
@@ -505,15 +506,10 @@ class Chat(Object):
             ValueError: if a chat_id belongs to user.
         """
 
-        return await self._client.set_chat_photo(
-            chat_id=self.id,
-            photo=photo
-        )
+        return await self._client.set_chat_photo(chat_id=self.id, photo=photo)
 
     async def ban_member(
-        self,
-        user_id: Union[int, str],
-        until_date: int = 0
+        self, user_id: Union[int, str], until_date: int = 0
     ) -> Union["types.Message", bool]:
         """Bound method *ban_member* of :obj:`~pyrogram.types.Chat`.
 
@@ -555,15 +551,10 @@ class Chat(Object):
         """
 
         return await self._client.ban_chat_member(
-            chat_id=self.id,
-            user_id=user_id,
-            until_date=until_date
+            chat_id=self.id, user_id=user_id, until_date=until_date
         )
 
-    async def unban_member(
-        self,
-        user_id: Union[int, str]
-    ) -> bool:
+    async def unban_member(self, user_id: Union[int, str]) -> bool:
         """Bound method *unban_member* of :obj:`~pyrogram.types.Chat`.
 
         Use as a shortcut for:
@@ -659,7 +650,7 @@ class Chat(Object):
         can_invite_users: bool = True,
         can_pin_messages: bool = False,
         can_promote_members: bool = False,
-        can_manage_voice_chats: bool = False
+        can_manage_voice_chats: bool = False,
     ) -> bool:
         """Bound method *promote_member* of :obj:`~pyrogram.types.Chat`.
 
@@ -736,7 +727,7 @@ class Chat(Object):
             can_invite_users=can_invite_users,
             can_pin_messages=can_pin_messages,
             can_promote_members=can_promote_members,
-            can_manage_voice_chats=can_manage_voice_chats
+            can_manage_voice_chats=can_manage_voice_chats,
         )
 
     async def join(self):
@@ -832,18 +823,11 @@ class Chat(Object):
             :obj:`~pyrogram.types.ChatMember`: On success, a chat member is returned.
         """
 
-        return await self._client.get_chat_member(
-            self.id,
-            user_id=user_id
-        )
+        return await self._client.get_chat_member(self.id, user_id=user_id)
 
     async def get_members(
-        self,
-        offset: int = 0,
-        limit: int = 200,
-        query: str = "",
-        filter: str = "all"
-    ) -> List["types.ChatMember"]:
+        self, offset: int = 0, limit: int = 200, query: str = "", filter: str = "all"
+    ) -> list["types.ChatMember"]:
         """Bound method *get_members* of :obj:`~pyrogram.types.Chat`.
 
         Use as a shortcut for:
@@ -901,18 +885,11 @@ class Chat(Object):
         """
 
         return await self._client.get_chat_members(
-            self.id,
-            offset=offset,
-            limit=limit,
-            query=query,
-            filter=filter
+            self.id, offset=offset, limit=limit, query=query, filter=filter
         )
 
     def iter_members(
-        self,
-        limit: int = 0,
-        query: str = "",
-        filter: str = "all"
+        self, limit: int = 0, query: str = "", filter: str = "all"
     ) -> Optional[Generator["types.ChatMember", None, None]]:
         """Bound method *iter_members* of :obj:`~pyrogram.types.Chat`.
 
@@ -966,17 +943,10 @@ class Chat(Object):
             ``Generator``: A generator yielding :obj:`~pyrogram.types.ChatMember` objects.
         """
 
-        return self._client.iter_chat_members(
-            self.id,
-            limit=limit,
-            query=query,
-            filter=filter
-        )
+        return self._client.iter_chat_members(self.id, limit=limit, query=query, filter=filter)
 
     async def add_members(
-        self,
-        user_ids: Union[Union[int, str], List[Union[int, str]]],
-        forward_limit: int = 100
+        self, user_ids: Union[Union[int, str], list[Union[int, str]]], forward_limit: int = 100
     ) -> bool:
         """Bound method *add_members* of :obj:`~pyrogram.types.Chat`.
 
@@ -996,12 +966,10 @@ class Chat(Object):
         """
 
         return await self._client.add_chat_members(
-            self.id,
-            user_ids=user_ids,
-            forward_limit=forward_limit
+            self.id, user_ids=user_ids, forward_limit=forward_limit
         )
 
-    async def mark_unread(self, ) -> bool:
+    async def mark_unread(self) -> bool:
         """Bound method *mark_unread* of :obj:`~pyrogram.types.Chat`.
 
         Use as a shortcut for:
@@ -1043,10 +1011,7 @@ class Chat(Object):
             ``bool``: On success, True is returned.
         """
 
-        return await self._client.set_chat_protected_content(
-            self.id,
-            enabled=enabled
-        )
+        return await self._client.set_chat_protected_content(self.id, enabled=enabled)
 
     async def unpin_all_messages(self) -> bool:
         """Bound method *unpin_all_messages* of :obj:`~pyrogram.types.Chat`.

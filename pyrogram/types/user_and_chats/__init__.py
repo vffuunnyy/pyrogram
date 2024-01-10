@@ -16,25 +16,26 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .chat import Chat
-from .chat_admin_with_invite_links import ChatAdminWithInviteLinks
-from .chat_event import ChatEvent
-from .chat_event_filter import ChatEventFilter
-from .chat_invite_link import ChatInviteLink
-from .chat_join_request import ChatJoinRequest
-from .chat_member import ChatMember
-from .chat_member_updated import ChatMemberUpdated
-from .chat_permissions import ChatPermissions
-from .chat_photo import ChatPhoto
-from .chat_preview import ChatPreview
-from .dialog import Dialog
-from .invite_link_importer import InviteLinkImporter
-from .restriction import Restriction
-from .user import User
-from .voice_chat_ended import VoiceChatEnded
-from .voice_chat_members_invited import VoiceChatMembersInvited
-from .voice_chat_scheduled import VoiceChatScheduled
-from .voice_chat_started import VoiceChatStarted
+from pyrogram.types.user_and_chats.chat import Chat
+from pyrogram.types.user_and_chats.chat_admin_with_invite_links import ChatAdminWithInviteLinks
+from pyrogram.types.user_and_chats.chat_event import ChatEvent
+from pyrogram.types.user_and_chats.chat_event_filter import ChatEventFilter
+from pyrogram.types.user_and_chats.chat_invite_link import ChatInviteLink
+from pyrogram.types.user_and_chats.chat_join_request import ChatJoinRequest
+from pyrogram.types.user_and_chats.chat_member import ChatMember
+from pyrogram.types.user_and_chats.chat_member_updated import ChatMemberUpdated
+from pyrogram.types.user_and_chats.chat_permissions import ChatPermissions
+from pyrogram.types.user_and_chats.chat_photo import ChatPhoto
+from pyrogram.types.user_and_chats.chat_preview import ChatPreview
+from pyrogram.types.user_and_chats.dialog import Dialog
+from pyrogram.types.user_and_chats.invite_link_importer import InviteLinkImporter
+from pyrogram.types.user_and_chats.restriction import Restriction
+from pyrogram.types.user_and_chats.user import User
+from pyrogram.types.user_and_chats.voice_chat_ended import VoiceChatEnded
+from pyrogram.types.user_and_chats.voice_chat_members_invited import VoiceChatMembersInvited
+from pyrogram.types.user_and_chats.voice_chat_scheduled import VoiceChatScheduled
+from pyrogram.types.user_and_chats.voice_chat_started import VoiceChatStarted
+
 
 __all__ = [
     "Chat",
@@ -55,5 +56,5 @@ __all__ = [
     "VoiceChatMembersInvited",
     "ChatMemberUpdated",
     "VoiceChatScheduled",
-    "ChatJoinRequest"
+    "ChatJoinRequest",
 ]

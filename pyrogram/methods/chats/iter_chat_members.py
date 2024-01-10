@@ -16,10 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Optional, Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -38,7 +38,7 @@ class IterChatMembers(Scaffold):
         chat_id: Union[int, str],
         limit: int = 0,
         query: str = "",
-        filter: str = Filters.RECENT
+        filter: str = Filters.RECENT,
     ) -> Optional[AsyncGenerator["types.ChatMember", None]]:
         """Iterate through the members of a chat sequentially.
 
@@ -96,11 +96,7 @@ class IterChatMembers(Scaffold):
 
         while True:
             chat_members = await self.get_chat_members(
-                chat_id=chat_id,
-                offset=offset,
-                limit=limit,
-                query=query,
-                filter=filter
+                chat_id=chat_id, offset=offset, limit=limit, query=query, filter=filter
             )
 
             if not chat_members:

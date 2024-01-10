@@ -18,9 +18,9 @@
 
 import logging
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
@@ -50,8 +50,7 @@ class ResendCode(Scaffold):
 
         r = await self.send(
             raw.functions.auth.ResendCode(
-                phone_number=phone_number,
-                phone_code_hash=phone_code_hash
+                phone_number=phone_number, phone_code_hash=phone_code_hash
             )
         )
 

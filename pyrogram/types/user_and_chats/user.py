@@ -17,13 +17,14 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import html
+
 from typing import List, Optional
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
-from ..update import Update
+
+from pyrogram import raw, types
+from pyrogram.types.object import Object
+from pyrogram.types.update import Update
 
 
 class Link(str):
@@ -174,7 +175,7 @@ class User(Object, Update):
         dc_id: int = None,
         phone_number: str = None,
         photo: "types.ChatPhoto" = None,
-        restrictions: List["types.Restriction"] = None
+        restrictions: list["types.Restriction"] = None,
     ):
         super().__init__(client)
 
@@ -230,8 +231,9 @@ class User(Object, Update):
             dc_id=getattr(user.photo, "dc_id", None),
             phone_number=user.phone,
             photo=types.ChatPhoto._parse(client, user.photo, user.id, user.access_hash),
-            restrictions=types.List([types.Restriction._parse(r) for r in user.restriction_reason]) or None,
-            client=client
+            restrictions=types.List([types.Restriction._parse(r) for r in user.restriction_reason])
+            or None,
+            client=client,
         )
 
     @staticmethod
@@ -264,16 +266,12 @@ class User(Object, Update):
         return {
             "status": status,
             "last_online_date": last_online_date,
-            "next_offline_date": next_offline_date
+            "next_offline_date": next_offline_date,
         }
 
     @staticmethod
     def _parse_user_status(client, user_status: "raw.types.UpdateUserStatus"):
-        return User(
-            id=user_status.user_id,
-            **User._parse_status(user_status.status),
-            client=client
-        )
+        return User(id=user_status.user_id, **User._parse_status(user_status.status), client=client)
 
     async def archive(self):
         """Bound method *archive* of :obj:`~pyrogram.types.User`.

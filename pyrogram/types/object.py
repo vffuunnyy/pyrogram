@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import typing
+
 from datetime import datetime
 from json import dumps
 
@@ -57,14 +58,14 @@ class Object(metaclass=Meta):
             **{
                 attr: (
                     "*" * 9
-                    if attr == "phone_number" else
-                    str(datetime.fromtimestamp(getattr(obj, attr)))
-                    if attr.endswith("date") else
-                    getattr(obj, attr)
+                    if attr == "phone_number"
+                    else str(datetime.fromtimestamp(getattr(obj, attr)))
+                    if attr.endswith("date")
+                    else getattr(obj, attr)
                 )
                 for attr in filter(lambda x: not x.startswith("_"), obj.__dict__)
                 if getattr(obj, attr) is not None
-            }
+            },
         }
 
     def __str__(self) -> str:
@@ -74,10 +75,10 @@ class Object(metaclass=Meta):
         return "pyrogram.types.{}({})".format(
             self.__class__.__name__,
             ", ".join(
-                f"{attr}={repr(getattr(self, attr))}"
+                f"{attr}={getattr(self, attr)!r}"
                 for attr in filter(lambda x: not x.startswith("_"), self.__dict__)
                 if getattr(self, attr) is not None
-            )
+            ),
         )
 
     def __eq__(self, other: "Object") -> bool:

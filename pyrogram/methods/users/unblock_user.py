@@ -23,10 +23,7 @@ from pyrogram.scaffold import Scaffold
 
 
 class UnblockUser(Scaffold):
-    async def unblock_user(
-        self,
-        user_id: Union[int, str]
-    ) -> bool:
+    async def unblock_user(self, user_id: Union[int, str]) -> bool:
         """Unblock a user.
 
         Parameters:
@@ -44,9 +41,5 @@ class UnblockUser(Scaffold):
                 app.unblock_user(user_id)
         """
         return bool(
-            await self.send(
-                raw.functions.contacts.Unblock(
-                    id=await self.resolve_peer(user_id)
-                )
-            )
+            await self.send(raw.functions.contacts.Unblock(id=await self.resolve_peer(user_id)))
         )

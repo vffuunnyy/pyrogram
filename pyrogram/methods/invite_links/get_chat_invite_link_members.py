@@ -16,19 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Optional, Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
 class GetChatInviteLinkMembers(Scaffold):
     async def get_chat_invite_link_members(
-        self,
-        chat_id: Union[int, str],
-        invite_link: str,
-        limit: int = 0
+        self, chat_id: Union[int, str], invite_link: str, limit: int = 0
     ) -> Optional[AsyncGenerator["types.ChatMember", None]]:
         """Get the members who joined the chat with the invite link.
 
@@ -64,7 +61,7 @@ class GetChatInviteLinkMembers(Scaffold):
                     link=invite_link,
                     limit=limit,
                     offset_date=offset_date,
-                    offset_user=offset_user
+                    offset_user=offset_user,
                 )
             )
 
@@ -79,11 +76,7 @@ class GetChatInviteLinkMembers(Scaffold):
             for i in r.importers:
                 user = types.User._parse(self, users[i.user_id])
 
-                yield types.ChatMember(
-                    user=user,
-                    status="member",
-                    joined_date=i.date
-                )
+                yield types.ChatMember(user=user, status="member", joined_date=i.date)
 
                 current += 1
 

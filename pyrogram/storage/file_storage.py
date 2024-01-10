@@ -21,9 +21,11 @@ import json
 import logging
 import os
 import sqlite3
+
 from pathlib import Path
 
-from .sqlite_storage import SQLiteStorage
+from pyrogram.storage.sqlite_storage import SQLiteStorage
+
 
 log = logging.getLogger(__name__)
 
@@ -89,7 +91,9 @@ class FileStorage(SQLiteStorage):
             except ValueError:
                 pass
             else:
-                log.warning("JSON session storage detected! Converting it into an SQLite session storage...")
+                log.warning(
+                    "JSON session storage detected! Converting it into an SQLite session storage..."
+                )
 
                 path.rename(path.name + ".OLD")
 
@@ -97,12 +101,16 @@ class FileStorage(SQLiteStorage):
 
                 self.migrate_from_json(session_json)
 
-                log.warning("Done! The session has been successfully converted from JSON to SQLite storage")
+                log.warning(
+                    "Done! The session has been successfully converted from JSON to SQLite storage"
+                )
 
                 return
 
         if Path(path.name + ".OLD").is_file():
-            log.warning(f'Old session file detected: "{path.name}.OLD". You can remove this file now')
+            log.warning(
+                f'Old session file detected: "{path.name}.OLD". You can remove this file now'
+            )
 
         self.conn = sqlite3.connect(str(path), timeout=1, check_same_thread=False)
 

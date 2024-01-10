@@ -21,6 +21,7 @@ import logging
 from pyrogram import raw
 from pyrogram.scaffold import Scaffold
 
+
 log = logging.getLogger(__name__)
 
 
@@ -34,6 +35,4 @@ class SendRecoveryCode(Scaffold):
         Raises:
             BadRequest: In case no recovery email was set up.
         """
-        return (await self.send(
-            raw.functions.auth.RequestPasswordRecovery()
-        )).email_pattern
+        return (await self.send(raw.functions.auth.RequestPasswordRecovery())).email_pattern

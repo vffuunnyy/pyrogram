@@ -17,10 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from typing import Union, BinaryIO
 
-from pyrogram import raw
-from pyrogram import utils
+from typing import BinaryIO, Union
+
+from pyrogram import raw, utils
 from pyrogram.file_id import FileType
 from pyrogram.scaffold import Scaffold
 
@@ -107,12 +107,7 @@ class SetChatPhoto(Scaffold):
                 )
             )
         elif isinstance(peer, raw.types.InputPeerChannel):
-            await self.send(
-                raw.functions.channels.EditPhoto(
-                    channel=peer,
-                    photo=photo
-                )
-            )
+            await self.send(raw.functions.channels.EditPhoto(channel=peer, photo=photo))
         else:
             raise ValueError(f'The chat_id "{chat_id}" belongs to a user')
 

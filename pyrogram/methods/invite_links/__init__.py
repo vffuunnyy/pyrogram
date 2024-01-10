@@ -17,20 +17,26 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from .approve_chat_join_request import ApproveChatJoinRequest
-from .create_chat_invite_link import CreateChatInviteLink
-from .decline_chat_join_request import DeclineChatJoinRequest
-from .delete_chat_admin_invite_links import DeleteChatAdminInviteLinks
-from .delete_chat_invite_link import DeleteChatInviteLink
-from .edit_chat_invite_link import EditChatInviteLink
-from .export_chat_invite_link import ExportChatInviteLink
-from .get_chat_admin_invite_links import GetChatAdminInviteLinks
-from .get_chat_admin_invite_links_count import GetChatAdminInviteLinksCount
-from .get_chat_admins_with_invite_links import GetChatAdminsWithInviteLinks
-from .get_chat_invite_link import GetChatInviteLink
-from .get_chat_invite_link_members import GetChatInviteLinkMembers
-from .get_chat_invite_link_members_count import GetChatInviteLinkMembersCount
-from .revoke_chat_invite_link import RevokeChatInviteLink
+from pyrogram.methods.invite_links.approve_chat_join_request import ApproveChatJoinRequest
+from pyrogram.methods.invite_links.create_chat_invite_link import CreateChatInviteLink
+from pyrogram.methods.invite_links.decline_chat_join_request import DeclineChatJoinRequest
+from pyrogram.methods.invite_links.delete_chat_admin_invite_links import DeleteChatAdminInviteLinks
+from pyrogram.methods.invite_links.delete_chat_invite_link import DeleteChatInviteLink
+from pyrogram.methods.invite_links.edit_chat_invite_link import EditChatInviteLink
+from pyrogram.methods.invite_links.export_chat_invite_link import ExportChatInviteLink
+from pyrogram.methods.invite_links.get_chat_admin_invite_links import GetChatAdminInviteLinks
+from pyrogram.methods.invite_links.get_chat_admin_invite_links_count import (
+    GetChatAdminInviteLinksCount,
+)
+from pyrogram.methods.invite_links.get_chat_admins_with_invite_links import (
+    GetChatAdminsWithInviteLinks,
+)
+from pyrogram.methods.invite_links.get_chat_invite_link import GetChatInviteLink
+from pyrogram.methods.invite_links.get_chat_invite_link_members import GetChatInviteLinkMembers
+from pyrogram.methods.invite_links.get_chat_invite_link_members_count import (
+    GetChatInviteLinkMembersCount,
+)
+from pyrogram.methods.invite_links.revoke_chat_invite_link import RevokeChatInviteLink
 
 
 class InviteLinks(
@@ -47,6 +53,6 @@ class InviteLinks(
     GetChatAdminsWithInviteLinks,
     GetChatInviteLink,
     ApproveChatJoinRequest,
-    DeclineChatJoinRequest
+    DeclineChatJoinRequest,
 ):
     pass

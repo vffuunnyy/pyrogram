@@ -17,19 +17,18 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 from typing import Union
 
 from pyrogram import raw
 from pyrogram.scaffold import Scaffold
 
+
 log = logging.getLogger(__name__)
 
 
 class GetHistoryCount(Scaffold):
-    async def get_history_count(
-        self,
-        chat_id: Union[int, str]
-    ) -> int:
+    async def get_history_count(self, chat_id: Union[int, str]) -> int:
         """Get the total count of messages in a chat.
 
         .. note::
@@ -60,7 +59,7 @@ class GetHistoryCount(Scaffold):
                 limit=1,
                 max_id=0,
                 min_id=0,
-                hash=0
+                hash=0,
             )
         )
 

@@ -18,8 +18,7 @@
 
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -28,7 +27,7 @@ class StopPoll(Scaffold):
         self,
         chat_id: Union[int, str],
         message_id: int,
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        reply_markup: "types.InlineKeyboardMarkup" = None,
     ) -> "types.Poll":
         """Stop a poll which was sent by you.
 
@@ -61,14 +60,9 @@ class StopPoll(Scaffold):
                 peer=await self.resolve_peer(chat_id),
                 id=message_id,
                 media=raw.types.InputMediaPoll(
-                    poll=raw.types.Poll(
-                        id=int(poll.id),
-                        closed=True,
-                        question="",
-                        answers=[]
-                    )
+                    poll=raw.types.Poll(id=int(poll.id), closed=True, question="", answers=[])
                 ),
-                reply_markup=await reply_markup.write(self) if reply_markup else None
+                reply_markup=await reply_markup.write(self) if reply_markup else None,
             )
         )
 

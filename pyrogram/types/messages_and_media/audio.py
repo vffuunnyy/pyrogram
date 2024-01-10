@@ -19,10 +19,10 @@
 from typing import List
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+
+from pyrogram import raw, types
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class Audio(Object):
@@ -74,7 +74,7 @@ class Audio(Object):
         mime_type: str = None,
         file_size: int = None,
         date: int = None,
-        thumbs: List["types.Thumbnail"] = None
+        thumbs: list["types.Thumbnail"] = None,
     ):
         super().__init__(client)
 
@@ -94,7 +94,7 @@ class Audio(Object):
         client,
         audio: "raw.types.Document",
         audio_attributes: "raw.types.DocumentAttributeAudio",
-        file_name: str
+        file_name: str,
     ) -> "Audio":
         return Audio(
             file_id=FileId(
@@ -102,11 +102,10 @@ class Audio(Object):
                 dc_id=audio.dc_id,
                 media_id=audio.id,
                 access_hash=audio.access_hash,
-                file_reference=audio.file_reference
+                file_reference=audio.file_reference,
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT,
-                media_id=audio.id
+                file_unique_type=FileUniqueType.DOCUMENT, media_id=audio.id
             ).encode(),
             duration=audio_attributes.duration,
             performer=audio_attributes.performer,
@@ -116,5 +115,5 @@ class Audio(Object):
             file_name=file_name,
             date=audio.date,
             thumbs=types.Thumbnail._parse(client, audio),
-            client=client
+            client=client,
         )

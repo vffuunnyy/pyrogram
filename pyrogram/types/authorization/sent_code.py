@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from pyrogram import raw
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class SentCode(Object):
@@ -43,11 +43,7 @@ class SentCode(Object):
     """
 
     def __init__(
-        self, *,
-        type: str,
-        phone_code_hash: str,
-        next_type: str = None,
-        timeout: int = None
+        self, *, type: str, phone_code_hash: str, next_type: str = None, timeout: int = None
     ):
         super().__init__()
 
@@ -82,5 +78,5 @@ class SentCode(Object):
             type=type,
             phone_code_hash=sent_code.phone_code_hash,
             next_type=next_type,
-            timeout=sent_code.timeout
+            timeout=sent_code.timeout,
         )

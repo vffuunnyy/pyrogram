@@ -16,17 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
 class CreateSupergroup(Scaffold):
-    async def create_supergroup(
-        self,
-        title: str,
-        description: str = ""
-    ) -> "types.Chat":
+    async def create_supergroup(self, title: str, description: str = "") -> "types.Chat":
         """Create a new supergroup.
 
         .. note::
@@ -49,11 +44,7 @@ class CreateSupergroup(Scaffold):
                 app.create_supergroup("Supergroup Title", "Supergroup Description")
         """
         r = await self.send(
-            raw.functions.channels.CreateChannel(
-                title=title,
-                about=description,
-                megagroup=True
-            )
+            raw.functions.channels.CreateChannel(title=title, about=description, megagroup=True)
         )
 
         return types.Chat._parse_chat(self, r.chats[0])

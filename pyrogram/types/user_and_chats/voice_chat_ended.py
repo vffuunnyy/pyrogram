@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from pyrogram import raw
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class VoiceChatEnded(Object):
@@ -28,10 +28,7 @@ class VoiceChatEnded(Object):
             Voice chat duration; in seconds.
     """
 
-    def __init__(
-        self, *,
-        duration: int
-    ):
+    def __init__(self, *, duration: int):
         super().__init__()
 
         self.duration = duration

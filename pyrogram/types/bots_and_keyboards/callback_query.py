@@ -17,15 +17,15 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from base64 import b64encode
+from re import Match
 from struct import pack
-from typing import Union, List, Match, Optional
+from typing import List, Optional, Union
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
-from ..update import Update
-from ... import utils
+
+from pyrogram import raw, types, utils
+from pyrogram.types.object import Object
+from pyrogram.types.update import Update
 
 
 class CallbackQuery(Object, Update):
@@ -75,7 +75,7 @@ class CallbackQuery(Object, Update):
         inline_message_id: str = None,
         data: Union[str, bytes] = None,
         game_short_name: str = None,
-        matches: List[Match] = None
+        matches: list[Match] = None,
     ):
         super().__init__(client)
 
@@ -94,17 +94,23 @@ class CallbackQuery(Object, Update):
         inline_message_id = None
 
         if isinstance(callback_query, raw.types.UpdateBotCallbackQuery):
-            message = await client.get_messages(utils.get_peer_id(callback_query.peer), callback_query.msg_id)
+            message = await client.get_messages(
+                utils.get_peer_id(callback_query.peer), callback_query.msg_id
+            )
         elif isinstance(callback_query, raw.types.UpdateInlineBotCallbackQuery):
-            inline_message_id = b64encode(
-                pack(
-                    "<iqq",
-                    callback_query.msg_id.dc_id,
-                    callback_query.msg_id.id,
-                    callback_query.msg_id.access_hash
-                ),
-                b"-_"
-            ).decode().rstrip("=")
+            inline_message_id = (
+                b64encode(
+                    pack(
+                        "<iqq",
+                        callback_query.msg_id.dc_id,
+                        callback_query.msg_id.id,
+                        callback_query.msg_id.access_hash,
+                    ),
+                    b"-_",
+                )
+                .decode()
+                .rstrip("=")
+            )
 
         # Try to decode callback query data into string. If that fails, fallback to bytes instead of decoding by
         # ignoring/replacing errors, this way, button clicks will still work.
@@ -121,10 +127,12 @@ class CallbackQuery(Object, Update):
             chat_instance=str(callback_query.chat_instance),
             data=data,
             game_short_name=callback_query.game_short_name,
-            client=client
+            client=client,
         )
 
-    async def answer(self, text: str = None, show_alert: bool = None, url: str = None, cache_time: int = 0):
+    async def answer(
+        self, text: str = None, show_alert: bool = None, url: str = None, cache_time: int = 0
+    ):
         """Bound method *answer* of :obj:`~pyrogram.types.CallbackQuery`.
 
         Use this method as a shortcut for:
@@ -165,7 +173,7 @@ class CallbackQuery(Object, Update):
             text=text,
             show_alert=show_alert,
             url=url,
-            cache_time=cache_time
+            cache_time=cache_time,
         )
 
     async def edit_message_text(
@@ -173,7 +181,7 @@ class CallbackQuery(Object, Update):
         text: str,
         parse_mode: Optional[str] = object,
         disable_web_page_preview: bool = None,
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        reply_markup: "types.InlineKeyboardMarkup" = None,
     ) -> Union["types.Message", bool]:
         """Edit the text of messages attached to callback queries.
 
@@ -210,7 +218,7 @@ class CallbackQuery(Object, Update):
                 text=text,
                 parse_mode=parse_mode,
                 disable_web_page_preview=disable_web_page_preview,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
             )
         else:
             return await self._client.edit_inline_text(
@@ -218,14 +226,14 @@ class CallbackQuery(Object, Update):
                 text=text,
                 parse_mode=parse_mode,
                 disable_web_page_preview=disable_web_page_preview,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
             )
 
     async def edit_message_caption(
         self,
         caption: str,
         parse_mode: Optional[str] = object,
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        reply_markup: "types.InlineKeyboardMarkup" = None,
     ) -> Union["types.Message", bool]:
         """Edit the caption of media messages attached to callback queries.
 
@@ -255,9 +263,7 @@ class CallbackQuery(Object, Update):
         return await self.edit_message_text(caption, parse_mode, reply_markup=reply_markup)
 
     async def edit_message_media(
-        self,
-        media: "types.InputMedia",
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        self, media: "types.InputMedia", reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> Union["types.Message", bool]:
         """Edit animation, audio, document, photo or video messages attached to callback queries.
 
@@ -282,18 +288,15 @@ class CallbackQuery(Object, Update):
                 chat_id=self.message.chat.id,
                 message_id=self.message.message_id,
                 media=media,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
             )
         else:
             return await self._client.edit_inline_media(
-                inline_message_id=self.inline_message_id,
-                media=media,
-                reply_markup=reply_markup
+                inline_message_id=self.inline_message_id, media=media, reply_markup=reply_markup
             )
 
     async def edit_message_reply_markup(
-        self,
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        self, reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> Union["types.Message", bool]:
         """Edit only the reply markup of messages attached to callback queries.
 
@@ -314,10 +317,9 @@ class CallbackQuery(Object, Update):
             return await self._client.edit_message_reply_markup(
                 chat_id=self.message.chat.id,
                 message_id=self.message.message_id,
-                reply_markup=reply_markup
+                reply_markup=reply_markup,
             )
         else:
             return await self._client.edit_inline_reply_markup(
-                inline_message_id=self.inline_message_id,
-                reply_markup=reply_markup
+                inline_message_id=self.inline_message_id, reply_markup=reply_markup
             )

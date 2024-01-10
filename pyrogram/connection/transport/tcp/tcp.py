@@ -22,12 +22,13 @@ import logging
 import socket
 import time
 
+
 try:
     import socks
 except ImportError as e:
     e.msg = (
         "PySocks is missing and Pyrogram can't run without. "
-        "Please install it using \"pip3 install pysocks\"."
+        'Please install it using "pip3 install pysocks".'
     )
 
     raise e
@@ -66,15 +67,12 @@ class TCP:
                 addr=hostname,
                 port=port,
                 username=proxy.get("username", None),
-                password=proxy.get("password", None)
+                password=proxy.get("password", None),
             )
 
             log.info(f"Using proxy {hostname}:{port}")
         else:
-            self.socket = socks.socksocket(
-                socket.AF_INET6 if ipv6
-                else socket.AF_INET
-            )
+            self.socket = socks.socksocket(socket.AF_INET6 if ipv6 else socket.AF_INET)
 
         self.socket.settimeout(TCP.TIMEOUT)
 
@@ -106,10 +104,7 @@ class TCP:
 
         while len(data) < length:
             try:
-                chunk = await asyncio.wait_for(
-                    self.reader.read(length - len(data)),
-                    TCP.TIMEOUT
-                )
+                chunk = await asyncio.wait_for(self.reader.read(length - len(data)), TCP.TIMEOUT)
             except (OSError, asyncio.TimeoutError):
                 return None
             else:

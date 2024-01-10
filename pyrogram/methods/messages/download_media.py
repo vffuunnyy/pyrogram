@@ -19,12 +19,14 @@
 import asyncio
 import os
 import time
+
 from datetime import datetime
-from typing import Union, Optional
+from typing import Optional, Union
 
 from pyrogram import types
-from pyrogram.file_id import FileId, FileType, PHOTO_TYPES
+from pyrogram.file_id import PHOTO_TYPES, FileId, FileType
 from pyrogram.scaffold import Scaffold
+
 
 DEFAULT_DOWNLOAD_DIR = "downloads/"
 
@@ -36,7 +38,7 @@ class DownloadMedia(Scaffold):
         file_name: str = DEFAULT_DOWNLOAD_DIR,
         block: bool = True,
         progress: callable = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
     ) -> Optional[str]:
         """Download the media from a message.
 
@@ -100,8 +102,17 @@ class DownloadMedia(Scaffold):
 
                 app.download_media(message, progress=progress)
         """
-        available_media = ("audio", "document", "photo", "sticker", "animation", "video", "voice", "video_note",
-                           "new_chat_photo")
+        available_media = (
+            "audio",
+            "document",
+            "photo",
+            "sticker",
+            "animation",
+            "video",
+            "voice",
+            "video_note",
+            "new_chat_photo",
+        )
 
         if isinstance(message, types.Message):
             for kind in available_media:
@@ -155,10 +166,17 @@ class DownloadMedia(Scaffold):
                 FileType(file_id_obj.file_type).name.lower(),
                 datetime.fromtimestamp(date or time.time()).strftime("%Y-%m-%d_%H-%M-%S"),
                 self.rnd_id(),
-                extension
+                extension,
             )
 
-        downloader = self.handle_download((file_id_obj, directory, file_name, file_size, progress, progress_args))
+        downloader = self.handle_download((
+            file_id_obj,
+            directory,
+            file_name,
+            file_size,
+            progress,
+            progress_args,
+        ))
 
         if block:
             return await downloader

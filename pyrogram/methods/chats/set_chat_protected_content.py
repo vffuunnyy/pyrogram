@@ -23,11 +23,7 @@ from pyrogram.scaffold import Scaffold
 
 
 class SetChatProtectedContent(Scaffold):
-    async def set_chat_protected_content(
-        self,
-        chat_id: Union[int, str],
-        enabled: bool
-    ) -> bool:
+    async def set_chat_protected_content(self, chat_id: Union[int, str], enabled: bool) -> bool:
         """Set the chat protected content setting.
 
         Parameters:
@@ -43,8 +39,7 @@ class SetChatProtectedContent(Scaffold):
 
         await self.send(
             functions.messages.ToggleNoForwards(
-                peer=await self.resolve_peer(chat_id),
-                enabled=enabled
+                peer=await self.resolve_peer(chat_id), enabled=enabled
             )
         )
 

@@ -24,33 +24,36 @@ import os
 import re
 import shutil
 import tempfile
+
 from concurrent.futures.thread import ThreadPoolExecutor
 from configparser import ConfigParser
 from hashlib import sha256
 from importlib import import_module
 from pathlib import Path
-from typing import Union, List, Optional
+from typing import List, Optional, Union
 
 import pyrogram
-from pyrogram import __version__, __license__
-from pyrogram import raw
-from pyrogram import utils
+
+from pyrogram import __license__, __version__, raw, utils
 from pyrogram.crypto import aes
-from pyrogram.errors import CDNFileHashMismatch
+from pyrogram.dispatcher import Dispatcher
 from pyrogram.errors import (
+    AuthBytesInvalid,
+    BadRequest,
+    CDNFileHashMismatch,
+    ChannelPrivate,
     SessionPasswordNeeded,
-    VolumeLocNotFound, ChannelPrivate,
-    AuthBytesInvalid, BadRequest
+    VolumeLocNotFound,
 )
+from pyrogram.file_id import FileId, FileType, ThumbnailSource
 from pyrogram.handlers.handler import Handler
 from pyrogram.methods import Methods
+from pyrogram.scaffold import Scaffold
 from pyrogram.session import Auth, Session
-from pyrogram.storage import Storage, FileStorage, MemoryStorage
-from pyrogram.types import User, TermsOfService
+from pyrogram.storage import FileStorage, MemoryStorage, Storage
+from pyrogram.types import TermsOfService, User
 from pyrogram.utils import ainput
-from .dispatcher import Dispatcher
-from .file_id import FileId, FileType, ThumbnailSource
-from .scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
@@ -185,6 +188,7 @@ class Client(Methods, Scaffold):
         device_model: str = None,
         system_version: str = None,
         lang_code: str = None,
+        lang_pack: str = None,
         ipv6: bool = False,
         proxy: dict = None,
         test_mode: bool = False,
@@ -201,7 +205,7 @@ class Client(Methods, Scaffold):
         no_updates: bool = None,
         takeout: bool = None,
         sleep_threshold: int = Session.SLEEP_THRESHOLD,
-        hide_password: bool = False
+        hide_password: bool = False,
     ):
         super().__init__()
 
@@ -212,6 +216,7 @@ class Client(Methods, Scaffold):
         self.device_model = device_model
         self.system_version = system_version
         self.lang_code = lang_code
+        self.lang_pack = lang_pack
         self.ipv6 = ipv6
         # TODO: Make code consistent, use underscore for private/protected fields
         self._proxy = proxy
@@ -280,8 +285,10 @@ class Client(Methods, Scaffold):
             return await self.sign_in_bot(self.bot_token)
 
         print(f"Welcome to Pyrogram (version {__version__})")
-        print(f"Pyrogram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n"
-              f"under the terms of the {__license__}.\n")
+        print(
+            f"Pyrogram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n"
+            f"under the terms of the {__license__}.\n"
+        )
 
         while True:
             try:
@@ -314,21 +321,25 @@ class Client(Methods, Scaffold):
         if self.force_sms:
             sent_code = await self.resend_code(self.phone_number, sent_code.phone_code_hash)
 
-        print("The confirmation code has been sent via {}".format(
-            {
-                "app": "Telegram app",
-                "sms": "SMS",
-                "call": "phone call",
-                "flash_call": "phone flash call"
-            }[sent_code.type]
-        ))
+        print(
+            "The confirmation code has been sent via {}".format(
+                {
+                    "app": "Telegram app",
+                    "sms": "SMS",
+                    "call": "phone call",
+                    "flash_call": "phone flash call",
+                }[sent_code.type]
+            )
+        )
 
         while True:
             if not self.phone_code:
                 self.phone_code = await ainput("Enter confirmation code: ")
 
             try:
-                signed_in = await self.sign_in(self.phone_number, sent_code.phone_code_hash, self.phone_code)
+                signed_in = await self.sign_in(
+                    self.phone_number, sent_code.phone_code_hash, self.phone_code
+                )
             except BadRequest as e:
                 print(e.MESSAGE)
                 self.phone_code = None
@@ -336,10 +347,12 @@ class Client(Methods, Scaffold):
                 print(e.MESSAGE)
 
                 while True:
-                    print("Password hint: {}".format(await self.get_password_hint()))
+                    print(f"Password hint: {await self.get_password_hint()}")
 
                     if not self.password:
-                        self.password = await ainput("Enter password (empty to recover): ", hide=self.hide_password)
+                        self.password = await ainput(
+                            "Enter password (empty to recover): ", hide=self.hide_password
+                        )
 
                     try:
                         if not self.password:
@@ -378,10 +391,7 @@ class Client(Methods, Scaffold):
 
             try:
                 signed_up = await self.sign_up(
-                    self.phone_number,
-                    sent_code.phone_code_hash,
-                    first_name,
-                    last_name
+                    self.phone_number, sent_code.phone_code_hash, first_name, last_name
                 )
             except BadRequest as e:
                 print(e.MESSAGE)
@@ -404,10 +414,11 @@ class Client(Methods, Scaffold):
             parse_mode = parse_mode.lower()
 
         if parse_mode not in self.PARSE_MODES:
-            raise ValueError('parse_mode must be one of {} or None. Not "{}"'.format(
-                ", ".join(f'"{m}"' for m in self.PARSE_MODES[:-1]),
-                parse_mode
-            ))
+            raise ValueError(
+                'parse_mode must be one of {} or None. Not "{}"'.format(
+                    ", ".join(f'"{m}"' for m in self.PARSE_MODES[:-1]), parse_mode
+                )
+            )
 
         self._parse_mode = parse_mode
 
@@ -458,7 +469,9 @@ class Client(Methods, Scaffold):
 
         self.parse_mode = parse_mode
 
-    async def fetch_peers(self, peers: List[Union[raw.types.User, raw.types.Chat, raw.types.Channel]]) -> bool:
+    async def fetch_peers(
+        self, peers: list[Union[raw.types.User, raw.types.Chat, raw.types.Channel]]
+    ) -> bool:
         is_min = False
         parsed_peers = []
 
@@ -502,14 +515,13 @@ class Client(Methods, Scaffold):
             file_id, directory, file_name, file_size, progress, progress_args = packet
 
             temp_file_path = await self.get_file(
-                file_id=file_id,
-                file_size=file_size,
-                progress=progress,
-                progress_args=progress_args
+                file_id=file_id, file_size=file_size, progress=progress, progress_args=progress_args
             )
 
             if temp_file_path:
-                final_file_path = os.path.abspath(re.sub("\\\\", "/", os.path.join(directory, file_name)))
+                final_file_path = os.path.abspath(
+                    re.sub("\\\\", "/", os.path.join(directory, file_name))
+                )
                 os.makedirs(directory, exist_ok=True)
                 shutil.move(temp_file_path, final_file_path)
         except Exception as e:
@@ -524,18 +536,16 @@ class Client(Methods, Scaffold):
 
     async def handle_updates(self, updates):
         if isinstance(updates, (raw.types.Updates, raw.types.UpdatesCombined)):
-            is_min = (await self.fetch_peers(updates.users)) or (await self.fetch_peers(updates.chats))
+            is_min = (await self.fetch_peers(updates.users)) or (
+                await self.fetch_peers(updates.chats)
+            )
 
             users = {u.id: u for u in updates.users}
             chats = {c.id: c for c in updates.chats}
 
             for update in updates.updates:
                 channel_id = getattr(
-                    getattr(
-                        getattr(
-                            update, "message", None
-                        ), "peer_id", None
-                    ), "channel_id", None
+                    getattr(getattr(update, "message", None), "peer_id", None), "channel_id", None
                 ) or getattr(update, "channel_id", None)
 
                 pts = getattr(update, "pts", None)
@@ -551,15 +561,18 @@ class Client(Methods, Scaffold):
                         try:
                             diff = await self.send(
                                 raw.functions.updates.GetChannelDifference(
-                                    channel=await self.resolve_peer(utils.get_channel_id(channel_id)),
+                                    channel=await self.resolve_peer(
+                                        utils.get_channel_id(channel_id)
+                                    ),
                                     filter=raw.types.ChannelMessagesFilter(
-                                        ranges=[raw.types.MessageRange(
-                                            min_id=update.message.id,
-                                            max_id=update.message.id
-                                        )]
+                                        ranges=[
+                                            raw.types.MessageRange(
+                                                min_id=update.message.id, max_id=update.message.id
+                                            )
+                                        ]
                                     ),
                                     pts=pts - pts_count,
-                                    limit=pts
+                                    limit=pts,
                                 )
                             )
                         except ChannelPrivate:
@@ -573,22 +586,22 @@ class Client(Methods, Scaffold):
         elif isinstance(updates, (raw.types.UpdateShortMessage, raw.types.UpdateShortChatMessage)):
             diff = await self.send(
                 raw.functions.updates.GetDifference(
-                    pts=updates.pts - updates.pts_count,
-                    date=updates.date,
-                    qts=-1
+                    pts=updates.pts - updates.pts_count, date=updates.date, qts=-1
                 )
             )
 
             if diff.new_messages:
-                self.dispatcher.updates_queue.put_nowait((
-                    raw.types.UpdateNewMessage(
-                        message=diff.new_messages[0],
-                        pts=updates.pts,
-                        pts_count=updates.pts_count
-                    ),
-                    {u.id: u for u in diff.users},
-                    {c.id: c for c in diff.chats}
-                ))
+                self.dispatcher.updates_queue.put_nowait(
+                    (
+                        raw.types.UpdateNewMessage(
+                            message=diff.new_messages[0],
+                            pts=updates.pts,
+                            pts_count=updates.pts_count,
+                        ),
+                        {u.id: u for u in diff.users},
+                        {c.id: c for c in diff.chats},
+                    )
+                )
             else:
                 if diff.other_updates:  # The other_updates list can be empty
                     self.dispatcher.updates_queue.put_nowait((diff.other_updates[0], {}, {}))
@@ -613,18 +626,20 @@ class Client(Methods, Scaffold):
                 self.api_id = parser.getint("pyrogram", "api_id")
                 self.api_hash = parser.get("pyrogram", "api_hash")
             else:
-                raise AttributeError("No API Key found. More info: https://docs.pyrogram.org/intro/setup")
+                raise AttributeError(
+                    "No API Key found. More info: https://docs.pyrogram.org/intro/setup"
+                )
 
         for option in ["app_version", "device_model", "system_version", "lang_code"]:
             if getattr(self, option):
                 pass
             else:
                 if parser.has_section("pyrogram"):
-                    setattr(self, option, parser.get(
-                        "pyrogram",
+                    setattr(
+                        self,
                         option,
-                        fallback=getattr(Client, option.upper())
-                    ))
+                        parser.get("pyrogram", option, fallback=getattr(Client, option.upper())),
+                    )
                 else:
                     setattr(self, option, getattr(Client, option.upper()))
 
@@ -645,7 +660,7 @@ class Client(Methods, Scaffold):
                 "enabled": bool(self.plugins.get("enabled", True)),
                 "root": self.plugins.get("root", None),
                 "include": self.plugins.get("include", []),
-                "exclude": self.plugins.get("exclude", [])
+                "exclude": self.plugins.get("exclude", []),
             }
         else:
             try:
@@ -655,7 +670,7 @@ class Client(Methods, Scaffold):
                     "enabled": section.getboolean("enabled", True),
                     "root": section.get("root", None),
                     "include": section.get("include", []),
-                    "exclude": section.get("exclude", [])
+                    "exclude": section.get("exclude", []),
                 }
 
                 include = self.plugins["include"]
@@ -673,12 +688,14 @@ class Client(Methods, Scaffold):
     async def load_session(self):
         await self.storage.open()
 
-        session_empty = any([
-            await self.storage.test_mode() is None,
-            await self.storage.auth_key() is None,
-            await self.storage.user_id() is None,
-            await self.storage.is_bot() is None
-        ])
+        session_empty = any(
+            [
+                await self.storage.test_mode() is None,
+                await self.storage.auth_key() is None,
+                await self.storage.user_id() is None,
+                await self.storage.is_bot() is None,
+            ]
+        )
 
         if session_empty:
             await self.storage.dc_id(2)
@@ -687,8 +704,7 @@ class Client(Methods, Scaffold):
             await self.storage.test_mode(self.test_mode)
             await self.storage.auth_key(
                 await Auth(
-                    self, await self.storage.dc_id(),
-                    await self.storage.test_mode()
+                    self, await self.storage.dc_id(), await self.storage.test_mode()
                 ).create()
             )
             await self.storage.user_id(None)
@@ -701,8 +717,7 @@ class Client(Methods, Scaffold):
             for option in ["include", "exclude"]:
                 if plugins[option]:
                     plugins[option] = [
-                        (i.split()[0], i.split()[1:] or None)
-                        for i in self.plugins[option]
+                        (i.split()[0], i.split()[1:] or None) for i in self.plugins[option]
                     ]
         else:
             return
@@ -716,7 +731,7 @@ class Client(Methods, Scaffold):
 
             if not include:
                 for path in sorted(Path(root.replace(".", "/")).rglob("*.py")):
-                    module_path = '.'.join(path.parent.parts + (path.stem,))
+                    module_path = ".".join(path.parent.parts + (path.stem,))
                     module = import_module(module_path)
 
                     for name in vars(module).keys():
@@ -726,8 +741,15 @@ class Client(Methods, Scaffold):
                                 if isinstance(handler, Handler) and isinstance(group, int):
                                     self.add_handler(handler, group)
 
-                                    log.info('[{}] [LOAD] {}("{}") in group {} from "{}"'.format(
-                                        self.session_name, type(handler).__name__, name, group, module_path))
+                                    log.info(
+                                        '[{}] [LOAD] {}("{}") in group {} from "{}"'.format(
+                                            self.session_name,
+                                            type(handler).__name__,
+                                            name,
+                                            group,
+                                            module_path,
+                                        )
+                                    )
 
                                     count += 1
                         except Exception:
@@ -740,11 +762,15 @@ class Client(Methods, Scaffold):
                     try:
                         module = import_module(module_path)
                     except ImportError:
-                        log.warning(f'[{self.session_name}] [LOAD] Ignoring non-existent module "{module_path}"')
+                        log.warning(
+                            f'[{self.session_name}] [LOAD] Ignoring non-existent module "{module_path}"'
+                        )
                         continue
 
                     if "__path__" in dir(module):
-                        log.warning(f'[{self.session_name}] [LOAD] Ignoring namespace "{module_path}"')
+                        log.warning(
+                            f'[{self.session_name}] [LOAD] Ignoring namespace "{module_path}"'
+                        )
                         continue
 
                     if handlers is None:
@@ -758,14 +784,24 @@ class Client(Methods, Scaffold):
                                 if isinstance(handler, Handler) and isinstance(group, int):
                                     self.add_handler(handler, group)
 
-                                    log.info('[{}] [LOAD] {}("{}") in group {} from "{}"'.format(
-                                        self.session_name, type(handler).__name__, name, group, module_path))
+                                    log.info(
+                                        '[{}] [LOAD] {}("{}") in group {} from "{}"'.format(
+                                            self.session_name,
+                                            type(handler).__name__,
+                                            name,
+                                            group,
+                                            module_path,
+                                        )
+                                    )
 
                                     count += 1
                         except Exception:
                             if warn_non_existent_functions:
-                                log.warning('[{}] [LOAD] Ignoring non-existent function "{}" from "{}"'.format(
-                                    self.session_name, name, module_path))
+                                log.warning(
+                                    '[{}] [LOAD] Ignoring non-existent function "{}" from "{}"'.format(
+                                        self.session_name, name, module_path
+                                    )
+                                )
 
             if exclude:
                 for path, handlers in exclude:
@@ -775,11 +811,15 @@ class Client(Methods, Scaffold):
                     try:
                         module = import_module(module_path)
                     except ImportError:
-                        log.warning(f'[{self.session_name}] [UNLOAD] Ignoring non-existent module "{module_path}"')
+                        log.warning(
+                            f'[{self.session_name}] [UNLOAD] Ignoring non-existent module "{module_path}"'
+                        )
                         continue
 
                     if "__path__" in dir(module):
-                        log.warning(f'[{self.session_name}] [UNLOAD] Ignoring namespace "{module_path}"')
+                        log.warning(
+                            f'[{self.session_name}] [UNLOAD] Ignoring namespace "{module_path}"'
+                        )
                         continue
 
                     if handlers is None:
@@ -793,27 +833,36 @@ class Client(Methods, Scaffold):
                                 if isinstance(handler, Handler) and isinstance(group, int):
                                     self.remove_handler(handler, group)
 
-                                    log.info('[{}] [UNLOAD] {}("{}") from group {} in "{}"'.format(
-                                        self.session_name, type(handler).__name__, name, group, module_path))
+                                    log.info(
+                                        '[{}] [UNLOAD] {}("{}") from group {} in "{}"'.format(
+                                            self.session_name,
+                                            type(handler).__name__,
+                                            name,
+                                            group,
+                                            module_path,
+                                        )
+                                    )
 
                                     count -= 1
                         except Exception:
                             if warn_non_existent_functions:
-                                log.warning('[{}] [UNLOAD] Ignoring non-existent function "{}" from "{}"'.format(
-                                    self.session_name, name, module_path))
+                                log.warning(
+                                    '[{}] [UNLOAD] Ignoring non-existent function "{}" from "{}"'.format(
+                                        self.session_name, name, module_path
+                                    )
+                                )
 
             if count > 0:
-                log.info('[{}] Successfully loaded {} plugin{} from "{}"'.format(
-                    self.session_name, count, "s" if count > 1 else "", root))
+                log.info(
+                    '[{}] Successfully loaded {} plugin{} from "{}"'.format(
+                        self.session_name, count, "s" if count > 1 else "", root
+                    )
+                )
             else:
                 log.warning(f'[{self.session_name}] No plugin loaded from "{root}"')
 
     async def get_file(
-        self,
-        file_id: FileId,
-        file_size: int,
-        progress: callable,
-        progress_args: tuple = ()
+        self, file_id: FileId, file_size: int, progress: callable, progress_args: tuple = ()
     ) -> str:
         dc_id = file_id.dc_id
 
@@ -823,23 +872,23 @@ class Client(Methods, Scaffold):
             if session is None:
                 if dc_id != await self.storage.dc_id():
                     session = Session(
-                        self, dc_id, await Auth(self, dc_id, await self.storage.test_mode()).create(),
-                        await self.storage.test_mode(), is_media=True
+                        self,
+                        dc_id,
+                        await Auth(self, dc_id, await self.storage.test_mode()).create(),
+                        await self.storage.test_mode(),
+                        is_media=True,
                     )
                     await session.start()
 
                     for _ in range(3):
                         exported_auth = await self.send(
-                            raw.functions.auth.ExportAuthorization(
-                                dc_id=dc_id
-                            )
+                            raw.functions.auth.ExportAuthorization(dc_id=dc_id)
                         )
 
                         try:
                             await session.send(
                                 raw.functions.auth.ImportAuthorization(
-                                    id=exported_auth.id,
-                                    bytes=exported_auth.bytes
+                                    id=exported_auth.id, bytes=exported_auth.bytes
                                 )
                             )
                         except AuthBytesInvalid:
@@ -851,8 +900,11 @@ class Client(Methods, Scaffold):
                         raise AuthBytesInvalid
                 else:
                     session = Session(
-                        self, dc_id, await self.storage.auth_key(),
-                        await self.storage.test_mode(), is_media=True
+                        self,
+                        dc_id,
+                        await self.storage.auth_key(),
+                        await self.storage.test_mode(),
+                        is_media=True,
                     )
                     await session.start()
 
@@ -863,38 +915,35 @@ class Client(Methods, Scaffold):
         if file_type == FileType.CHAT_PHOTO:
             if file_id.chat_id > 0:
                 peer = raw.types.InputPeerUser(
-                    user_id=file_id.chat_id,
-                    access_hash=file_id.chat_access_hash
+                    user_id=file_id.chat_id, access_hash=file_id.chat_access_hash
                 )
             else:
                 if file_id.chat_access_hash == 0:
-                    peer = raw.types.InputPeerChat(
-                        chat_id=-file_id.chat_id
-                    )
+                    peer = raw.types.InputPeerChat(chat_id=-file_id.chat_id)
                 else:
                     peer = raw.types.InputPeerChannel(
                         channel_id=utils.get_channel_id(file_id.chat_id),
-                        access_hash=file_id.chat_access_hash
+                        access_hash=file_id.chat_access_hash,
                     )
 
             location = raw.types.InputPeerPhotoFileLocation(
                 peer=peer,
                 photo_id=file_id.media_id,
-                big=file_id.thumbnail_source == ThumbnailSource.CHAT_PHOTO_BIG
+                big=file_id.thumbnail_source == ThumbnailSource.CHAT_PHOTO_BIG,
             )
         elif file_type == FileType.PHOTO:
             location = raw.types.InputPhotoFileLocation(
                 id=file_id.media_id,
                 access_hash=file_id.access_hash,
                 file_reference=file_id.file_reference,
-                thumb_size=file_id.thumbnail_size
+                thumb_size=file_id.thumbnail_size,
             )
         else:
             location = raw.types.InputDocumentFileLocation(
                 id=file_id.media_id,
                 access_hash=file_id.access_hash,
                 file_reference=file_id.file_reference,
-                thumb_size=file_id.thumbnail_size
+                thumb_size=file_id.thumbnail_size,
             )
 
         limit = 1024 * 1024
@@ -903,12 +952,8 @@ class Client(Methods, Scaffold):
 
         try:
             r = await session.send(
-                raw.functions.upload.GetFile(
-                    location=location,
-                    offset=offset,
-                    limit=limit
-                ),
-                sleep_threshold=30
+                raw.functions.upload.GetFile(location=location, offset=offset, limit=limit),
+                sleep_threshold=30,
             )
 
             if isinstance(r, raw.types.upload.File):
@@ -925,11 +970,9 @@ class Client(Methods, Scaffold):
                         if progress:
                             func = functools.partial(
                                 progress,
-                                min(offset, file_size)
-                                if file_size != 0
-                                else offset,
+                                min(offset, file_size) if file_size != 0 else offset,
                                 file_size,
-                                *progress_args
+                                *progress_args,
                             )
 
                             if inspect.iscoroutinefunction(progress):
@@ -942,11 +985,9 @@ class Client(Methods, Scaffold):
 
                         r = await session.send(
                             raw.functions.upload.GetFile(
-                                location=location,
-                                offset=offset,
-                                limit=limit
+                                location=location, offset=offset, limit=limit
                             ),
-                            sleep_threshold=30
+                            sleep_threshold=30,
                         )
 
             elif isinstance(r, raw.types.upload.FileCdnRedirect):
@@ -955,8 +996,12 @@ class Client(Methods, Scaffold):
 
                     if cdn_session is None:
                         cdn_session = Session(
-                            self, r.dc_id, await Auth(self, r.dc_id, await self.storage.test_mode()).create(),
-                            await self.storage.test_mode(), is_media=True, is_cdn=True
+                            self,
+                            r.dc_id,
+                            await Auth(self, r.dc_id, await self.storage.test_mode()).create(),
+                            await self.storage.test_mode(),
+                            is_media=True,
+                            is_cdn=True,
                         )
 
                         await cdn_session.start()
@@ -970,9 +1015,7 @@ class Client(Methods, Scaffold):
                         while True:
                             r2 = await cdn_session.send(
                                 raw.functions.upload.GetCdnFile(
-                                    file_token=r.file_token,
-                                    offset=offset,
-                                    limit=limit
+                                    file_token=r.file_token, offset=offset, limit=limit
                                 )
                             )
 
@@ -980,8 +1023,7 @@ class Client(Methods, Scaffold):
                                 try:
                                     await session.send(
                                         raw.functions.upload.ReuploadCdnFile(
-                                            file_token=r.file_token,
-                                            request_token=r2.request_token
+                                            file_token=r.file_token, request_token=r2.request_token
                                         )
                                     )
                                 except VolumeLocNotFound:
@@ -995,22 +1037,18 @@ class Client(Methods, Scaffold):
                             decrypted_chunk = aes.ctr256_decrypt(
                                 chunk,
                                 r.encryption_key,
-                                bytearray(
-                                    r.encryption_iv[:-4]
-                                    + (offset // 16).to_bytes(4, "big")
-                                )
+                                bytearray(r.encryption_iv[:-4] + (offset // 16).to_bytes(4, "big")),
                             )
 
                             hashes = await session.send(
                                 raw.functions.upload.GetCdnFileHashes(
-                                    file_token=r.file_token,
-                                    offset=offset
+                                    file_token=r.file_token, offset=offset
                                 )
                             )
 
                             # https://core.telegram.org/cdn#verifying-files
                             for i, h in enumerate(hashes):
-                                cdn_chunk = decrypted_chunk[h.limit * i: h.limit * (i + 1)]
+                                cdn_chunk = decrypted_chunk[h.limit * i : h.limit * (i + 1)]
                                 CDNFileHashMismatch.check(h.hash == sha256(cdn_chunk).digest())
 
                             f.write(decrypted_chunk)
@@ -1022,7 +1060,7 @@ class Client(Methods, Scaffold):
                                     progress,
                                     min(offset, file_size) if file_size != 0 else offset,
                                     file_size,
-                                    *progress_args
+                                    *progress_args,
                                 )
 
                                 if inspect.iscoroutinefunction(progress):

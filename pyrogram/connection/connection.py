@@ -18,10 +18,12 @@
 
 import asyncio
 import logging
+
 from typing import Optional
 
-from .transport import *
-from ..session.internals import DataCenter
+from pyrogram.connection.transport import *
+from pyrogram.session.internals import DataCenter
+
 
 log = logging.getLogger(__name__)
 
@@ -29,15 +31,17 @@ log = logging.getLogger(__name__)
 class Connection:
     MAX_RETRIES = 3
 
-    MODES = {
-        0: TCPFull,
-        1: TCPAbridged,
-        2: TCPIntermediate,
-        3: TCPAbridgedO,
-        4: TCPIntermediateO
-    }
+    MODES = {0: TCPFull, 1: TCPAbridged, 2: TCPIntermediate, 3: TCPAbridgedO, 4: TCPIntermediateO}
 
-    def __init__(self, dc_id: int, test_mode: bool, ipv6: bool, proxy: dict, media: bool = False, mode: int = 3):
+    def __init__(
+        self,
+        dc_id: int,
+        test_mode: bool,
+        ipv6: bool,
+        proxy: dict,
+        media: bool = False,
+        mode: int = 3,
+    ):
         self.dc_id = dc_id
         self.test_mode = test_mode
         self.ipv6 = ipv6
@@ -60,13 +64,15 @@ class Connection:
                 self.protocol.close()
                 await asyncio.sleep(1)
             else:
-                log.info("Connected! {} DC{}{} - IPv{} - {}".format(
-                    "Test" if self.test_mode else "Production",
-                    self.dc_id,
-                    " (media)" if self.media else "",
-                    "6" if self.ipv6 else "4",
-                    self.mode.__name__,
-                ))
+                log.info(
+                    "Connected! {} DC{}{} - IPv{} - {}".format(
+                        "Test" if self.test_mode else "Production",
+                        self.dc_id,
+                        " (media)" if self.media else "",
+                        "6" if self.ipv6 else "4",
+                        self.mode.__name__,
+                    )
+                )
                 break
         else:
             log.warning("Connection failed! Trying again...")

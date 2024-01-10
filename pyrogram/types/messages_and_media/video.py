@@ -19,10 +19,10 @@
 from typing import List
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+
+from pyrogram import raw, types
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class Video(Object):
@@ -82,7 +82,7 @@ class Video(Object):
         supports_streaming: bool = None,
         ttl_seconds: int = None,
         date: int = None,
-        thumbs: List["types.Thumbnail"] = None
+        thumbs: list["types.Thumbnail"] = None,
     ):
         super().__init__(client)
 
@@ -105,7 +105,7 @@ class Video(Object):
         video: "raw.types.Document",
         video_attributes: "raw.types.DocumentAttributeVideo",
         file_name: str,
-        ttl_seconds: int = None
+        ttl_seconds: int = None,
     ) -> "Video":
         return Video(
             file_id=FileId(
@@ -113,11 +113,10 @@ class Video(Object):
                 dc_id=video.dc_id,
                 media_id=video.id,
                 access_hash=video.access_hash,
-                file_reference=video.file_reference
+                file_reference=video.file_reference,
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT,
-                media_id=video.id
+                file_unique_type=FileUniqueType.DOCUMENT, media_id=video.id
             ).encode(),
             width=video_attributes.w,
             height=video_attributes.h,
@@ -129,5 +128,5 @@ class Video(Object):
             date=video.date,
             ttl_seconds=ttl_seconds,
             thumbs=types.Thumbnail._parse(client, video),
-            client=client
+            client=client,
         )

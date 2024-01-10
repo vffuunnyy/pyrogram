@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from pyrogram import raw
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class KeyboardButton(Object):
@@ -39,12 +39,7 @@ class KeyboardButton(Object):
             Available in private chats only.
     """
 
-    def __init__(
-        self,
-        text: str,
-        request_contact: bool = None,
-        request_location: bool = None
-    ):
+    def __init__(self, text: str, request_contact: bool = None, request_location: bool = None):
         super().__init__()
 
         self.text = str(text)
@@ -57,16 +52,10 @@ class KeyboardButton(Object):
             return b.text
 
         if isinstance(b, raw.types.KeyboardButtonRequestPhone):
-            return KeyboardButton(
-                text=b.text,
-                request_contact=True
-            )
+            return KeyboardButton(text=b.text, request_contact=True)
 
         if isinstance(b, raw.types.KeyboardButtonRequestGeoLocation):
-            return KeyboardButton(
-                text=b.text,
-                request_location=True
-            )
+            return KeyboardButton(text=b.text, request_location=True)
 
     def write(self):
         if self.request_contact:

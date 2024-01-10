@@ -23,11 +23,7 @@ from pyrogram.scaffold import Scaffold
 
 
 class SetChatTitle(Scaffold):
-    async def set_chat_title(
-        self,
-        chat_id: Union[int, str],
-        title: str
-    ) -> bool:
+    async def set_chat_title(self, chat_id: Union[int, str], title: str) -> bool:
         """Change the title of a chat.
         Titles can't be changed for private chats.
         You must be an administrator in the chat for this to work and must have the appropriate admin rights.
@@ -57,19 +53,9 @@ class SetChatTitle(Scaffold):
         peer = await self.resolve_peer(chat_id)
 
         if isinstance(peer, raw.types.InputPeerChat):
-            await self.send(
-                raw.functions.messages.EditChatTitle(
-                    chat_id=peer.chat_id,
-                    title=title
-                )
-            )
+            await self.send(raw.functions.messages.EditChatTitle(chat_id=peer.chat_id, title=title))
         elif isinstance(peer, raw.types.InputPeerChannel):
-            await self.send(
-                raw.functions.channels.EditTitle(
-                    channel=peer,
-                    title=title
-                )
-            )
+            await self.send(raw.functions.channels.EditTitle(channel=peer, title=title))
         else:
             raise ValueError(f'The chat_id "{chat_id}" belongs to a user')
 

@@ -18,11 +18,13 @@
 
 import logging
 import os
+
 from struct import pack, unpack
 from typing import Optional
 
+from pyrogram.connection.transport.tcp.tcp import TCP
 from pyrogram.crypto import aes
-from .tcp import TCP
+
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ class TCPIntermediateO(TCP):
             nonce = bytearray(os.urandom(64))
 
             if nonce[0] != b"\xef" and nonce[:4] not in self.RESERVED and nonce[4:4] != b"\x00" * 4:
-                nonce[56] = nonce[57] = nonce[58] = nonce[59] = 0xee
+                nonce[56] = nonce[57] = nonce[58] = nonce[59] = 0xEE
                 break
 
         temp = bytearray(nonce[55:7:-1])
@@ -56,12 +58,7 @@ class TCPIntermediateO(TCP):
         await super().send(nonce)
 
     async def send(self, data: bytes, *args):
-        await super().send(
-            aes.ctr256_encrypt(
-                pack("<i", len(data)) + data,
-                *self.encrypt
-            )
-        )
+        await super().send(aes.ctr256_encrypt(pack("<i", len(data)) + data, *self.encrypt))
 
     async def recv(self, length: int = 0) -> Optional[bytes]:
         length = await super().recv(4)

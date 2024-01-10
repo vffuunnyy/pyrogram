@@ -17,12 +17,12 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Union, List
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from typing import List, Union
+
+from pyrogram import raw, types, utils
 from pyrogram.scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
@@ -35,8 +35,8 @@ class GetHistory(Scaffold):
         offset: int = 0,
         offset_id: int = 0,
         offset_date: int = 0,
-        reverse: bool = False
-    ) -> List["types.Message"]:
+        reverse: bool = False,
+    ) -> list["types.Message"]:
         """Retrieve a chunk of the history of a chat.
 
         You can get up to 100 messages at once.
@@ -94,10 +94,10 @@ class GetHistory(Scaffold):
                     limit=limit,
                     max_id=0,
                     min_id=0,
-                    hash=0
+                    hash=0,
                 ),
-                sleep_threshold=60
-            )
+                sleep_threshold=60,
+            ),
         )
 
         if reverse:

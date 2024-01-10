@@ -18,12 +18,10 @@
 
 import os
 import re
-from typing import Union, BinaryIO, List, Optional
 
-from pyrogram import StopTransmission
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from typing import BinaryIO, List, Optional, Union
+
+from pyrogram import StopTransmission, raw, types, utils
 from pyrogram.errors import FilePartMissing
 from pyrogram.file_id import FileType
 from pyrogram.scaffold import Scaffold
@@ -36,7 +34,7 @@ class SendVideo(Scaffold):
         video: Union[str, BinaryIO],
         caption: str = "",
         parse_mode: Optional[str] = object,
-        caption_entities: List["types.MessageEntity"] = None,
+        caption_entities: list["types.MessageEntity"] = None,
         ttl_seconds: int = None,
         duration: int = 0,
         width: int = 0,
@@ -52,10 +50,10 @@ class SendVideo(Scaffold):
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply"
+            "types.ForceReply",
         ] = None,
         progress: callable = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
     ) -> Optional["types.Message"]:
         """Send video files.
 
@@ -180,7 +178,9 @@ class SendVideo(Scaffold):
             if isinstance(video, str):
                 if os.path.isfile(video):
                     thumb = await self.save_file(thumb)
-                    file = await self.save_file(video, progress=progress, progress_args=progress_args)
+                    file = await self.save_file(
+                        video, progress=progress, progress_args=progress_args
+                    )
                     media = raw.types.InputMediaUploadedDocument(
                         mime_type=self.guess_mime_type(video) or "video/mp4",
                         file=file,
@@ -191,16 +191,15 @@ class SendVideo(Scaffold):
                                 supports_streaming=supports_streaming or None,
                                 duration=duration,
                                 w=width,
-                                h=height
+                                h=height,
                             ),
-                            raw.types.DocumentAttributeFilename(file_name=file_name or os.path.basename(video))
-                        ]
+                            raw.types.DocumentAttributeFilename(
+                                file_name=file_name or os.path.basename(video)
+                            ),
+                        ],
                     )
                 elif re.match("^https?://", video):
-                    media = raw.types.InputMediaDocumentExternal(
-                        url=video,
-                        ttl_seconds=ttl_seconds
-                    )
+                    media = raw.types.InputMediaDocumentExternal(url=video, ttl_seconds=ttl_seconds)
                 else:
                     media = utils.get_input_media_from_file_id(video, FileType.VIDEO)
             else:
@@ -216,10 +215,10 @@ class SendVideo(Scaffold):
                             supports_streaming=supports_streaming or None,
                             duration=duration,
                             w=width,
-                            h=height
+                            h=height,
                         ),
-                        raw.types.DocumentAttributeFilename(file_name=file_name or video.name)
-                    ]
+                        raw.types.DocumentAttributeFilename(file_name=file_name or video.name),
+                    ],
                 )
 
             while True:
@@ -234,21 +233,29 @@ class SendVideo(Scaffold):
                             schedule_date=schedule_date,
                             noforwards=protect_content,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
-                            **await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
+                            **await utils.parse_text_entities(
+                                self, caption, parse_mode, caption_entities
+                            ),
                         )
                     )
                 except FilePartMissing as e:
                     await self.save_file(video, file_id=file.id, file_part=e.x)
                 else:
                     for i in r.updates:
-                        if isinstance(i, (raw.types.UpdateNewMessage,
-                                          raw.types.UpdateNewChannelMessage,
-                                          raw.types.UpdateNewScheduledMessage)):
+                        if isinstance(
+                            i,
+                            (
+                                raw.types.UpdateNewMessage,
+                                raw.types.UpdateNewChannelMessage,
+                                raw.types.UpdateNewScheduledMessage,
+                            ),
+                        ):
                             return await types.Message._parse(
-                                self, i.message,
+                                self,
+                                i.message,
                                 {i.id: i for i in r.users},
                                 {i.id: i for i in r.chats},
-                                is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                                is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                             )
         except StopTransmission:
             return None

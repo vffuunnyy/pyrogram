@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Iterable
+from collections.abc import Iterable
+from typing import Union
 
 from pyrogram import raw
 from pyrogram.scaffold import Scaffold
@@ -24,10 +25,7 @@ from pyrogram.scaffold import Scaffold
 
 class DeleteMessages(Scaffold):
     async def delete_messages(
-        self,
-        chat_id: Union[int, str],
-        message_ids: Union[int, Iterable[int]],
-        revoke: bool = True
+        self, chat_id: Union[int, str], message_ids: Union[int, Iterable[int]], revoke: bool = True
     ) -> bool:
         """Delete messages, including service messages.
 
@@ -66,18 +64,10 @@ class DeleteMessages(Scaffold):
         message_ids = list(message_ids) if not isinstance(message_ids, int) else [message_ids]
 
         if isinstance(peer, raw.types.InputPeerChannel):
-            r = await self.send(
-                raw.functions.channels.DeleteMessages(
-                    channel=peer,
-                    id=message_ids
-                )
-            )
+            r = await self.send(raw.functions.channels.DeleteMessages(channel=peer, id=message_ids))
         else:
             r = await self.send(
-                raw.functions.messages.DeleteMessages(
-                    id=message_ids,
-                    revoke=revoke or None
-                )
+                raw.functions.messages.DeleteMessages(id=message_ids, revoke=revoke or None)
             )
 
         # Deleting messages you don't have right onto, won't raise any error.

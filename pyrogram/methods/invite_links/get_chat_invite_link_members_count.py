@@ -24,9 +24,7 @@ from pyrogram.scaffold import Scaffold
 
 class GetChatInviteLinkMembersCount(Scaffold):
     async def get_chat_invite_link_members_count(
-        self,
-        chat_id: Union[int, str],
-        invite_link: str
+        self, chat_id: Union[int, str], invite_link: str
     ) -> int:
         """Get the count of the members who joined the chat with the invite link.
 
@@ -47,7 +45,7 @@ class GetChatInviteLinkMembersCount(Scaffold):
                 link=invite_link,
                 limit=1,
                 offset_date=0,
-                offset_user=raw.types.InputUserEmpty()
+                offset_user=raw.types.InputUserEmpty(),
             )
         )
 

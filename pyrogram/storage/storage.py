@@ -18,6 +18,7 @@
 
 import base64
 import struct
+
 from typing import List, Tuple
 
 from pyrogram import utils
@@ -44,7 +45,7 @@ class Storage:
     async def delete(self):
         raise NotImplementedError
 
-    async def update_peers(self, peers: List[Tuple[int, int, str, str, str]]):
+    async def update_peers(self, peers: list[tuple[int, int, str, str, str]]):
         raise NotImplementedError
 
     async def get_peer_by_id(self, peer_id: int):
@@ -76,13 +77,19 @@ class Storage:
 
     async def export_session_string(self):
         user_id = await self.user_id()
-        return base64.urlsafe_b64encode(
-            struct.pack(
-                self.SESSION_STRING_FORMAT if user_id < utils.MAX_USER_ID_OLD else self.SESSION_STRING_FORMAT_64,
-                await self.dc_id(),
-                await self.test_mode(),
-                await self.auth_key(),
-                user_id,
-                await self.is_bot()
+        return (
+            base64.urlsafe_b64encode(
+                struct.pack(
+                    self.SESSION_STRING_FORMAT
+                    if user_id < utils.MAX_USER_ID_OLD
+                    else self.SESSION_STRING_FORMAT_64,
+                    await self.dc_id(),
+                    await self.test_mode(),
+                    await self.auth_key(),
+                    user_id,
+                    await self.is_bot(),
+                )
             )
-        ).decode().rstrip("=")
+            .decode()
+            .rstrip("=")
+        )

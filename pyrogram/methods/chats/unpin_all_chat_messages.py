@@ -45,9 +45,7 @@ class UnpinAllChatMessages(Scaffold):
                 app.unpin_all_chat_messages(chat_id)
         """
         await self.send(
-            raw.functions.messages.UnpinAllMessages(
-                peer=await self.resolve_peer(chat_id)
-            )
+            raw.functions.messages.UnpinAllMessages(peer=await self.resolve_peer(chat_id))
         )
 
         return True

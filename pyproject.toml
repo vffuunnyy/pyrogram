@@ -111,8 +111,9 @@ ignore = [
     "B030", # Except handlers should only be exception classes or tuples of exception
     "S301", # `pickle` and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue,
     "FA102", # `__future__` import "annotations" missing
+    "F401", # unused-import
 ]
-fixable = ["ALL"]
+fixable = ["ALL", "TID252"]
 unfixable = ["ERA"] # do not autoremove commented out code
 
 [tool.ruff.format]

@@ -16,25 +16,36 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .bot_command import BotCommand
-from .bot_command_scope import BotCommandScope
-from .bot_command_scope_all_chat_administrators import BotCommandScopeAllChatAdministrators
-from .bot_command_scope_all_group_chats import BotCommandScopeAllGroupChats
-from .bot_command_scope_all_private_chats import BotCommandScopeAllPrivateChats
-from .bot_command_scope_chat import BotCommandScopeChat
-from .bot_command_scope_chat_administrators import BotCommandScopeChatAdministrators
-from .bot_command_scope_chat_member import BotCommandScopeChatMember
-from .bot_command_scope_default import BotCommandScopeDefault
-from .callback_game import CallbackGame
-from .callback_query import CallbackQuery
-from .force_reply import ForceReply
-from .game_high_score import GameHighScore
-from .inline_keyboard_button import InlineKeyboardButton
-from .inline_keyboard_markup import InlineKeyboardMarkup
-from .keyboard_button import KeyboardButton
-from .login_url import LoginUrl
-from .reply_keyboard_markup import ReplyKeyboardMarkup
-from .reply_keyboard_remove import ReplyKeyboardRemove
+from pyrogram.types.bots_and_keyboards.bot_command import BotCommand
+from pyrogram.types.bots_and_keyboards.bot_command_scope import BotCommandScope
+from pyrogram.types.bots_and_keyboards.bot_command_scope_all_chat_administrators import (
+    BotCommandScopeAllChatAdministrators,
+)
+from pyrogram.types.bots_and_keyboards.bot_command_scope_all_group_chats import (
+    BotCommandScopeAllGroupChats,
+)
+from pyrogram.types.bots_and_keyboards.bot_command_scope_all_private_chats import (
+    BotCommandScopeAllPrivateChats,
+)
+from pyrogram.types.bots_and_keyboards.bot_command_scope_chat import BotCommandScopeChat
+from pyrogram.types.bots_and_keyboards.bot_command_scope_chat_administrators import (
+    BotCommandScopeChatAdministrators,
+)
+from pyrogram.types.bots_and_keyboards.bot_command_scope_chat_member import (
+    BotCommandScopeChatMember,
+)
+from pyrogram.types.bots_and_keyboards.bot_command_scope_default import BotCommandScopeDefault
+from pyrogram.types.bots_and_keyboards.callback_game import CallbackGame
+from pyrogram.types.bots_and_keyboards.callback_query import CallbackQuery
+from pyrogram.types.bots_and_keyboards.force_reply import ForceReply
+from pyrogram.types.bots_and_keyboards.game_high_score import GameHighScore
+from pyrogram.types.bots_and_keyboards.inline_keyboard_button import InlineKeyboardButton
+from pyrogram.types.bots_and_keyboards.inline_keyboard_markup import InlineKeyboardMarkup
+from pyrogram.types.bots_and_keyboards.keyboard_button import KeyboardButton
+from pyrogram.types.bots_and_keyboards.login_url import LoginUrl
+from pyrogram.types.bots_and_keyboards.reply_keyboard_markup import ReplyKeyboardMarkup
+from pyrogram.types.bots_and_keyboards.reply_keyboard_remove import ReplyKeyboardRemove
+
 
 __all__ = [
     "CallbackGame",

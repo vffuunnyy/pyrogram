@@ -18,8 +18,7 @@
 
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -29,7 +28,7 @@ class RestrictChatMember(Scaffold):
         chat_id: Union[int, str],
         user_id: Union[int, str],
         permissions: "types.ChatPermissions",
-        until_date: int = 0
+        until_date: int = 0,
     ) -> "types.Chat":
         """Restrict a user in a supergroup.
 
@@ -88,7 +87,7 @@ class RestrictChatMember(Scaffold):
                     change_info=True if not permissions.can_change_info else None,
                     invite_users=True if not permissions.can_invite_users else None,
                     pin_messages=True if not permissions.can_pin_messages else None,
-                )
+                ),
             )
         )
 

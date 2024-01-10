@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from pyrogram import raw
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class VoiceChatScheduled(Object):
@@ -28,10 +28,7 @@ class VoiceChatScheduled(Object):
             Point in time (Unix timestamp) when the voice chat is supposed to be started by a chat administrator.
     """
 
-    def __init__(
-        self, *,
-        start_date: int
-    ):
+    def __init__(self, *, start_date: int):
         super().__init__()
 
         self.start_date = start_date

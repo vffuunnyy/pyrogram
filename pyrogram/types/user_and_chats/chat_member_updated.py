@@ -19,10 +19,10 @@
 from typing import Dict, Union
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
-from ..update import Update
+
+from pyrogram import raw, types
+from pyrogram.types.object import Object
+from pyrogram.types.update import Update
 
 
 class ChatMemberUpdated(Object, Update):
@@ -72,10 +72,10 @@ class ChatMemberUpdated(Object, Update):
     def _parse(
         client: "pyrogram.Client",
         update: Union["raw.types.UpdateChatParticipant", "raw.types.UpdateChannelParticipant"],
-        users: Dict[int, "raw.types.User"],
-        chats: Dict[int, "raw.types.Chat"]
+        users: dict[int, "raw.types.User"],
+        chats: dict[int, "raw.types.Chat"],
     ) -> "ChatMemberUpdated":
-        chat_id = getattr(update, "chat_id", None) or getattr(update, "channel_id")
+        chat_id = getattr(update, "chat_id", None) or update.channel_id
 
         old_chat_member = None
         new_chat_member = None
@@ -97,5 +97,5 @@ class ChatMemberUpdated(Object, Update):
             old_chat_member=old_chat_member,
             new_chat_member=new_chat_member,
             invite_link=invite_link,
-            client=client
+            client=client,
         )

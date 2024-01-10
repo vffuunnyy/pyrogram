@@ -17,9 +17,9 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
+
+from pyrogram import raw, types
+from pyrogram.types.object import Object
 
 
 class WebPage(Object):
@@ -105,7 +105,7 @@ class WebPage(Object):
         embed_width: int = None,
         embed_height: int = None,
         duration: int = None,
-        author: str = None
+        author: str = None,
     ):
         super().__init__(client)
 
@@ -145,9 +145,7 @@ class WebPage(Object):
             attributes = {type(i): i for i in doc.attributes}
 
             file_name = getattr(
-                attributes.get(
-                    raw.types.DocumentAttributeFilename, None
-                ), "file_name", None
+                attributes.get(raw.types.DocumentAttributeFilename, None), "file_name", None
             )
 
             if raw.types.DocumentAttributeAudio in attributes:
@@ -183,5 +181,5 @@ class WebPage(Object):
             embed_width=webpage.embed_width,
             embed_height=webpage.embed_height,
             duration=webpage.duration,
-            author=webpage.author
+            author=webpage.author,
         )

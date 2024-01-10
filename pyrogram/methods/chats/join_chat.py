@@ -18,16 +18,12 @@
 
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
 class JoinChat(Scaffold):
-    async def join_chat(
-        self,
-        chat_id: Union[int, str]
-    ) -> "types.Chat":
+    async def join_chat(self, chat_id: Union[int, str]) -> "types.Chat":
         """Join a group chat or channel.
 
         Parameters:
@@ -53,20 +49,14 @@ class JoinChat(Scaffold):
         match = self.INVITE_LINK_RE.match(str(chat_id))
 
         if match:
-            chat = await self.send(
-                raw.functions.messages.ImportChatInvite(
-                    hash=match.group(1)
-                )
-            )
+            chat = await self.send(raw.functions.messages.ImportChatInvite(hash=match.group(1)))
             if isinstance(chat.chats[0], raw.types.Chat):
                 return types.Chat._parse_chat_chat(self, chat.chats[0])
             elif isinstance(chat.chats[0], raw.types.Channel):
                 return types.Chat._parse_channel_chat(self, chat.chats[0])
         else:
             chat = await self.send(
-                raw.functions.channels.JoinChannel(
-                    channel=await self.resolve_peer(chat_id)
-                )
+                raw.functions.channels.JoinChannel(channel=await self.resolve_peer(chat_id))
             )
 
             return types.Chat._parse_channel_chat(self, chat.chats[0])

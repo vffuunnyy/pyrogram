@@ -16,11 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Optional
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 from pyrogram.scaffold import Scaffold
 
 
@@ -41,7 +40,9 @@ class Filters:
     CONTACT = raw.types.InputMessagesFilterContacts()
 
 
-POSSIBLE_VALUES = list(map(lambda x: x.lower(), filter(lambda x: not x.startswith("__"), Filters.__dict__.keys())))
+POSSIBLE_VALUES = list(
+    map(lambda x: x.lower(), filter(lambda x: not x.startswith("__"), Filters.__dict__.keys()))
+)
 
 
 class SearchGlobal(Scaffold):
@@ -64,7 +65,7 @@ class SearchGlobal(Scaffold):
             query (``str``, *optional*):
                 Text query string.
                 Use "@" to search for mentions.
-            
+
             filter (``str``, *optional*):
                 Pass a filter in order to search for specific kind of messages only:
 
@@ -104,8 +105,11 @@ class SearchGlobal(Scaffold):
         try:
             filter = Filters.__dict__[filter.upper()]
         except KeyError:
-            raise ValueError('Invalid filter "{}". Possible values are: {}'.format(
-                filter, ", ".join(f'"{v}"' for v in POSSIBLE_VALUES))) from None
+            raise ValueError(
+                'Invalid filter "{}". Possible values are: {}'.format(
+                    filter, ", ".join(f'"{v}"' for v in POSSIBLE_VALUES)
+                )
+            ) from None
         current = 0
         # There seems to be an hard limit of 10k, beyond which Telegram starts spitting one message at a time.
         total = abs(limit) or (1 << 31)
@@ -127,11 +131,11 @@ class SearchGlobal(Scaffold):
                         offset_rate=offset_date,
                         offset_peer=offset_peer,
                         offset_id=offset_id,
-                        limit=limit
+                        limit=limit,
                     ),
-                    sleep_threshold=60
+                    sleep_threshold=60,
                 ),
-                replies=0
+                replies=0,
             )
 
             if not messages:

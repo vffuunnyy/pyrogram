@@ -17,8 +17,9 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
+
 from pyrogram import raw
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class Contact(Object):
@@ -49,7 +50,7 @@ class Contact(Object):
         first_name: str,
         last_name: str = None,
         user_id: int = None,
-        vcard: str = None
+        vcard: str = None,
     ):
         super().__init__(client)
 
@@ -67,5 +68,5 @@ class Contact(Object):
             last_name=contact.last_name or None,
             vcard=contact.vcard or None,
             user_id=contact.user_id or None,
-            client=client
+            client=client,
         )

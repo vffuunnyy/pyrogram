@@ -16,18 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
+from pyrogram.methods.messages.inline_session import get_session
 from pyrogram.scaffold import Scaffold
-from .inline_session import get_session
 
 
 class EditInlineReplyMarkup(Scaffold):
     async def edit_inline_reply_markup(
-        self,
-        inline_message_id: str,
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        self, inline_message_id: str, reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> bool:
         """Edit only the reply markup of inline messages sent via the bot (for inline bots).
 
@@ -63,5 +59,5 @@ class EditInlineReplyMarkup(Scaffold):
                 id=unpacked,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
             ),
-            sleep_threshold=self.sleep_threshold
+            sleep_threshold=self.sleep_threshold,
         )

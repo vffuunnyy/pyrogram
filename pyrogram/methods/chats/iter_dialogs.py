@@ -16,17 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Optional
 
-from pyrogram import types, raw, utils
+from pyrogram import raw, types, utils
 from pyrogram.scaffold import Scaffold
 
 
 class IterDialogs(Scaffold):
-    async def iter_dialogs(
-        self,
-        limit: int = 0
-    ) -> Optional[AsyncGenerator["types.Dialog", None]]:
+    async def iter_dialogs(self, limit: int = 0) -> Optional[AsyncGenerator["types.Dialog", None]]:
         """Iterate through a user's dialogs sequentially.
 
         This convenience method does the same as repeatedly calling :meth:`~pyrogram.Client.get_dialogs` in a loop,
@@ -57,16 +55,16 @@ class IterDialogs(Scaffold):
         offset_peer = raw.types.InputPeerEmpty()
 
         while True:
-            r = (await self.send(
+            r = await self.send(
                 raw.functions.messages.GetDialogs(
                     offset_date=offset_date,
                     offset_id=offset_id,
                     offset_peer=offset_peer,
                     limit=limit,
-                    hash=0
+                    hash=0,
                 ),
-                sleep_threshold=60
-            ))
+                sleep_threshold=60,
+            )
 
             users = {i.id: i for i in r.users}
             chats = {i.id: i for i in r.chats}

@@ -18,11 +18,14 @@
 
 import logging
 import os
+
 from typing import Optional
 
 import pyrogram
+
+from pyrogram.connection.transport.tcp.tcp import TCP
 from pyrogram.crypto import aes
-from .tcp import TCP
+
 
 log = logging.getLogger(__name__)
 
@@ -43,7 +46,7 @@ class TCPAbridgedO(TCP):
             nonce = bytearray(os.urandom(64))
 
             if nonce[0] != b"\xef" and nonce[:4] not in self.RESERVED and nonce[4:4] != b"\x00" * 4:
-                nonce[56] = nonce[57] = nonce[58] = nonce[59] = 0xef
+                nonce[56] = nonce[57] = nonce[58] = nonce[59] = 0xEF
                 break
 
         temp = bytearray(nonce[55:7:-1])
@@ -58,7 +61,9 @@ class TCPAbridgedO(TCP):
     async def send(self, data: bytes, *args):
         length = len(data) // 4
         data = (bytes([length]) if length <= 126 else b"\x7f" + length.to_bytes(3, "little")) + data
-        payload = await self.loop.run_in_executor(pyrogram.crypto_executor, aes.ctr256_encrypt, data, *self.encrypt)
+        payload = await self.loop.run_in_executor(
+            pyrogram.crypto_executor, aes.ctr256_encrypt, data, *self.encrypt
+        )
 
         await super().send(payload)
 
@@ -83,4 +88,6 @@ class TCPAbridgedO(TCP):
         if data is None:
             return None
 
-        return await self.loop.run_in_executor(pyrogram.crypto_executor, aes.ctr256_decrypt, data, *self.decrypt)
+        return await self.loop.run_in_executor(
+            pyrogram.crypto_executor, aes.ctr256_decrypt, data, *self.decrypt
+        )

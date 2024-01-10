@@ -17,8 +17,8 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from pyrogram import raw
+from pyrogram.methods.messages.search_messages import POSSIBLE_VALUES, Filters
 from pyrogram.scaffold import Scaffold
-from .search_messages import Filters, POSSIBLE_VALUES
 
 
 class SearchGlobalCount(Scaffold):
@@ -60,8 +60,11 @@ class SearchGlobalCount(Scaffold):
         try:
             filter = Filters.__dict__[filter.upper()]
         except KeyError:
-            raise ValueError('Invalid filter "{}". Possible values are: {}'.format(
-                filter, ", ".join(f'"{v}"' for v in POSSIBLE_VALUES))) from None
+            raise ValueError(
+                'Invalid filter "{}". Possible values are: {}'.format(
+                    filter, ", ".join(f'"{v}"' for v in POSSIBLE_VALUES)
+                )
+            ) from None
 
         r = await self.send(
             raw.functions.messages.SearchGlobal(
@@ -72,7 +75,7 @@ class SearchGlobalCount(Scaffold):
                 offset_rate=0,
                 offset_peer=raw.types.InputPeerEmpty(),
                 offset_id=0,
-                limit=1
+                limit=1,
             )
         )
 

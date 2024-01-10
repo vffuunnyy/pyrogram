@@ -18,6 +18,7 @@
 
 from collections import namedtuple
 
+
 PublicKey = namedtuple("PublicKey", ["m", "e"])
 
 # To get modulus and exponent:
@@ -30,7 +31,7 @@ PublicKey = namedtuple("PublicKey", ["m", "e"])
 
 server_public_keys = {
     # -4344800451088585951
-    0xc3b42b026ce86b21 - (1 << 64): PublicKey(  # Telegram servers #1
+    0xC3B42B026CE86B21 - (1 << 64): PublicKey(  # Telegram servers #1
         # -----BEGIN RSA PUBLIC KEY-----
         # MIIBCgKCAQEAwVACPi9w23mF3tBkdZz+zwrzKOaaQdr01vAbU4E1pvkfj4sqDsm6
         # lyDONS789sVoD/xCS9Y0hkkC3gtL1tSfTlgCMOOul9lcixlEKzwKENj1Yz/s7daS
@@ -48,13 +49,12 @@ server_public_keys = {
             "81104A305B6DD27665722C46B60E5DF680FB16B210607EF217652E60236C255F"
             "6A28315F4083A96791D7214BF64C1DF4FD0DB1944FB26A2A57031B32EEE64AD1"
             "5A8BA68885CDE74A5BFC920F6ABF59BA5C75506373E7130F9042DA922179251F",
-            16
+            16,
         ),  # Modulus
-        int("010001", 16)  # Exponent
+        int("010001", 16),  # Exponent
     ),
-
     # 847625836280919973
-    0x10bc35f3509f7b7a5 - (1 << 64): PublicKey(  # Telegram servers #2
+    0x10BC35F3509F7B7A5 - (1 << 64): PublicKey(  # Telegram servers #2
         # -----BEGIN PUBLIC KEY-----
         # MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAruw2yP/BCcsJliRoW5eB
         # VBVle9dtjJw+OYED160Wybum9SXtBBLXriwt4rROd9csv0t0OHCaTmRqBcQ0J8fx
@@ -73,13 +73,12 @@ server_public_keys = {
             "30B2E52ACA78BA023CF6CE806B1DC49C72CF928A7199D22E3D7AC84E47BC9427"
             "D0236945D10DBD15177BAB413FBF0EDFDA09F014C7A7DA088DDE9759702CA760"
             "AF2B8E4E97CC055C617BD74C3D97008635B98DC4D621B4891DA9FB0473047927",
-            16
+            16,
         ),  # Modulus
-        int("010001", 16)  # Exponent
+        int("010001", 16),  # Exponent
     ),
-
     # 1562291298945373506
-    0x115ae5fa8b5529542 - (1 << 64): PublicKey(  # Telegram servers #3
+    0x115AE5FA8B5529542 - (1 << 64): PublicKey(  # Telegram servers #3
         # -----BEGIN PUBLIC KEY-----
         # MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvfLHfYH2r9R70w8prHbl
         # Wt/nDkh+XkgpflqQVcnAfSuTtO05lNPspQmL8Y2XjVT4t8cT6xAkdgfmmvnvRPOO
@@ -98,13 +97,12 @@ server_public_keys = {
             "259D18AF806638012DA0CA4A70BAA83D9C158F3552BC9158E69BF332A45809E1"
             "C36905A5CAA12348DD57941A482131BE7B2355A5F4635374F3BD3DDF5FF925BF"
             "4809EE27C1E67D9120C5FE08A9DE458B1B4A3C5D0A428437F2BECA81F4E2D5FF",
-            16
+            16,
         ),  # Modulus
-        int("010001", 16)  # Exponent
+        int("010001", 16),  # Exponent
     ),
-
     # -5859577972006586033
-    0xaeae98e13cd7f94f - (1 << 64): PublicKey(  # Telegram servers #4
+    0xAEAE98E13CD7F94F - (1 << 64): PublicKey(  # Telegram servers #4
         # -----BEGIN PUBLIC KEY-----
         # MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs/ditzm+mPND6xkhzwFI
         # z6J/968CtkcSE/7Z2qAJiXbmZ3UDJPGrzqTDHkO30R8VeRM/Kz2f4nR05GIFiITl
@@ -123,13 +121,12 @@ server_public_keys = {
             "4D315B5E21B5C26B46BABE3D75D06D1CD33329EC782A0F22891ED1DB42A1D6C0"
             "DEA431428BC4D7AABDCF3E0EB6FDA4E23EB7733E7727E9A1915580796C55188D"
             "2596D2665AD1182BA7ABF15AAA5A8B779EA996317A20AE044B820BFF35B6E8A1",
-            16
+            16,
         ),  # Modulus
-        int("010001", 16)  # Exponent
+        int("010001", 16),  # Exponent
     ),
-
     # 6491968696586960280
-    0x15a181b2235057d98 - (1 << 64): PublicKey(  # Telegram servers #5
+    0x15A181B2235057D98 - (1 << 64): PublicKey(  # Telegram servers #5
         # -----BEGIN PUBLIC KEY-----
         # MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvmpxVY7ld/8DAjz6F6q0
         # 5shjg8/4p6047bn6/m8yPy1RBsvIyvuDuGnP/RzPEhzXQ9UJ5Ynmh2XJZgHoE9xb
@@ -148,13 +145,12 @@ server_public_keys = {
             "6DE94F5DC0A7ABEE0BE990B893F2887BD2C6310A1E0A9E3E38BD34FDED254150"
             "8DC102A9C9B4C95EFFD9DD2DFE96C29BE647D6C69D66CA500843CFAED6E44019"
             "6F1DBE0E2E22163C61CA48C79116FA77216726749A976A1C4B0944B5121E8C01",
-            16
+            16,
         ),  # Modulus
-        int("010001", 16)  # Exponent
+        int("010001", 16),  # Exponent
     ),
-
     # 6427105915145367799
-    0x15931aac70e0d30f7 - (1 << 64): PublicKey(  # CDN DC-121
+    0x15931AAC70E0D30F7 - (1 << 64): PublicKey(  # CDN DC-121
         # -----BEGIN RSA PUBLIC KEY-----
         # MIIBCgKCAQEA+Lf3PvgE1yxbJUCMaEAkV0QySTVpnaDjiednB5RbtNWjCeqSVakY
         # HbqqGMIIv5WCGdFdrqOfMNcNSstPtSU6R9UmRw6tquOIykpSuUOje9H+4XVIKquj
@@ -172,13 +168,12 @@ server_public_keys = {
             "61CB4CEA53FE62557E2918A608DF585E6575ECD5E16A3D2D21F471919214869E"
             "265F1DD00F048B2E41F60B413BC98BF977D044A38E9ABEDAE01338468D9D7B9A"
             "EBDA2DA877B8585DDDC33BD1514A5E32D7303C026E3C45F77DE561C5DCDFCE99",
-            16
+            16,
         ),  # Modulus
-        int("010001", 16)  # Exponent
+        int("010001", 16),  # Exponent
     ),
-
     # 2685959930972952888
-    0x1254672538e935938 - (1 << 64): PublicKey(  # CDN DC-140
+    0x1254672538E935938 - (1 << 64): PublicKey(  # CDN DC-140
         # -----BEGIN RSA PUBLIC KEY-----
         # MIIBCgKCAQEAzuHVC7sE50Kho/yDVZtWnlmA5Bf/aM8KZY3WzS16w6w1sBqipj8o
         # gMGG7ULbGBtYmKEaI7IIJO6WM2m1MaXVnsqS8d7PaGAZiy8rSN3S7S2a8wp4RXZe
@@ -196,10 +191,10 @@ server_public_keys = {
             "A067E9C079172CCCECC09C2B16C428EC776373149DB66AAB9A4DEBF7916B391E"
             "832AE5A7892E27DE0AB1B4451C55F90F1F2ECE3ACEF708BC2C5EE022066EE434"
             "4C7268D724AABAAC667667D727AC3F2956ED4BDAF7089DDE0AEB18A6652DA16F",
-            16
+            16,
         ),  # Modulus
-        int("010001", 16)  # Exponent
-    )
+        int("010001", 16),  # Exponent
+    ),
 }
 
 
@@ -207,5 +202,5 @@ def encrypt(data: bytes, fingerprint: int) -> bytes:
     return pow(
         int.from_bytes(data, "big"),
         server_public_keys[fingerprint].e,
-        server_public_keys[fingerprint].m
+        server_public_keys[fingerprint].m,
     ).to_bytes(256, "big")

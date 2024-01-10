@@ -16,6 +16,6 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .data_center import DataCenter
-from .msg_factory import MsgFactory
-from .msg_id import MsgId
+from pyrogram.session.internals.data_center import DataCenter
+from pyrogram.session.internals.msg_factory import MsgFactory
+from pyrogram.session.internals.msg_id import MsgId

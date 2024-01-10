@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import json
+
 from typing import Union
 
 from pyrogram import raw
@@ -42,7 +43,9 @@ class ChatAction:
     CANCEL = raw.types.SendMessageCancelAction
 
 
-POSSIBLE_VALUES = list(map(lambda x: x.lower(), filter(lambda x: not x.startswith("__"), ChatAction.__dict__.keys())))
+POSSIBLE_VALUES = list(
+    map(lambda x: x.lower(), filter(lambda x: not x.startswith("__"), ChatAction.__dict__.keys()))
+)
 
 
 class SendChatAction(Scaffold):
@@ -89,8 +92,11 @@ class SendChatAction(Scaffold):
         try:
             action = ChatAction.__dict__[action.upper()]
         except KeyError:
-            raise ValueError("Invalid chat action '{}'. Possible values are: {}".format(
-                action, json.dumps(POSSIBLE_VALUES, indent=4))) from None
+            raise ValueError(
+                "Invalid chat action '{}'. Possible values are: {}".format(
+                    action, json.dumps(POSSIBLE_VALUES, indent=4)
+                )
+            ) from None
 
         if "Upload" in action.__name__ or "History" in action.__name__:
             action = action(progress=0)
@@ -98,8 +104,5 @@ class SendChatAction(Scaffold):
             action = action()
 
         return await self.send(
-            raw.functions.messages.SetTyping(
-                peer=await self.resolve_peer(chat_id),
-                action=action
-            )
+            raw.functions.messages.SetTyping(peer=await self.resolve_peer(chat_id), action=action)
         )

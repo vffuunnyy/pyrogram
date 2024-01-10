@@ -19,6 +19,7 @@
 from typing import List
 
 import pyrogram
+
 from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
@@ -26,7 +27,7 @@ from pyrogram.scaffold import Scaffold
 class SetBotCommands(Scaffold):
     async def set_bot_commands(
         self: "pyrogram.Client",
-        commands: List["types.BotCommand"],
+        commands: list["types.BotCommand"],
         scope: "types.BotCommandScope" = types.BotCommandScopeDefault(),
         language_code: str = "",
     ):

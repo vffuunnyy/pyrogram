@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from pyrogram import raw
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class Restriction(Object):
@@ -44,7 +44,5 @@ class Restriction(Object):
     @staticmethod
     def _parse(restriction: "raw.types.RestrictionReason") -> "Restriction":
         return Restriction(
-            platform=restriction.platform,
-            reason=restriction.reason,
-            text=restriction.text
+            platform=restriction.platform, reason=restriction.reason, text=restriction.text
         )

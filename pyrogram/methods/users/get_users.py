@@ -17,18 +17,18 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
-from typing import Iterable, Union, List
 
-from pyrogram import raw
-from pyrogram import types
+from collections.abc import Iterable
+from typing import List, Union
+
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
 class GetUsers(Scaffold):
     async def get_users(
-        self,
-        user_ids: Union[Iterable[Union[int, str]], int, str]
-    ) -> Union["types.User", List["types.User"]]:
+        self, user_ids: Union[Iterable[Union[int, str]], int, str]
+    ) -> Union["types.User", list["types.User"]]:
         """Get information about a user.
         You can retrieve up to 200 users at once.
 
@@ -56,11 +56,7 @@ class GetUsers(Scaffold):
         user_ids = list(user_ids) if is_iterable else [user_ids]
         user_ids = await asyncio.gather(*[self.resolve_peer(i) for i in user_ids])
 
-        r = await self.send(
-            raw.functions.users.GetUsers(
-                id=user_ids
-            )
-        )
+        r = await self.send(raw.functions.users.GetUsers(id=user_ids))
 
         users = types.List()
 

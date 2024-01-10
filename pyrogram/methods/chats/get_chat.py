@@ -18,17 +18,12 @@
 
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 from pyrogram.scaffold import Scaffold
 
 
 class GetChat(Scaffold):
-    async def get_chat(
-        self,
-        chat_id: Union[int, str]
-    ) -> Union["types.Chat", "types.ChatPreview"]:
+    async def get_chat(self, chat_id: Union[int, str]) -> Union["types.Chat", "types.ChatPreview"]:
         """Get up to date information about a chat.
 
         Information include current name of the user for one-on-one conversations, current username of a user, group or
@@ -56,11 +51,7 @@ class GetChat(Scaffold):
         match = self.INVITE_LINK_RE.match(str(chat_id))
 
         if match:
-            r = await self.send(
-                raw.functions.messages.CheckChatInvite(
-                    hash=match.group(1)
-                )
-            )
+            r = await self.send(raw.functions.messages.CheckChatInvite(hash=match.group(1)))
 
             if isinstance(r, raw.types.ChatInvite):
                 return types.ChatPreview._parse(self, r)

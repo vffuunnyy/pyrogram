@@ -17,9 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
+
 from pyrogram import raw
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
-from ..object import Object
+from pyrogram.types.object import Object
 
 
 class Voice(Object):
@@ -59,7 +60,7 @@ class Voice(Object):
         waveform: bytes = None,
         mime_type: str = None,
         file_size: int = None,
-        date: int = None
+        date: int = None,
     ):
         super().__init__(client)
 
@@ -72,23 +73,24 @@ class Voice(Object):
         self.date = date
 
     @staticmethod
-    def _parse(client, voice: "raw.types.Document", attributes: "raw.types.DocumentAttributeAudio") -> "Voice":
+    def _parse(
+        client, voice: "raw.types.Document", attributes: "raw.types.DocumentAttributeAudio"
+    ) -> "Voice":
         return Voice(
             file_id=FileId(
                 file_type=FileType.VOICE,
                 dc_id=voice.dc_id,
                 media_id=voice.id,
                 access_hash=voice.access_hash,
-                file_reference=voice.file_reference
+                file_reference=voice.file_reference,
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT,
-                media_id=voice.id
+                file_unique_type=FileUniqueType.DOCUMENT, media_id=voice.id
             ).encode(),
             duration=attributes.duration,
             mime_type=voice.mime_type,
             file_size=voice.size,
             waveform=attributes.waveform,
             date=voice.date,
-            client=client
+            client=client,
         )

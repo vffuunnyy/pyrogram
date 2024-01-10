@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List
+from typing import List, Union
 
 from pyrogram import raw
 from pyrogram.scaffold import Scaffold
@@ -26,8 +26,8 @@ class AddChatMembers(Scaffold):
     async def add_chat_members(
         self,
         chat_id: Union[int, str],
-        user_ids: Union[Union[int, str], List[Union[int, str]]],
-        forward_limit: int = 100
+        user_ids: Union[Union[int, str], list[Union[int, str]]],
+        forward_limit: int = 100,
     ) -> bool:
         """Add new chat members to a group, supergroup or channel
 
@@ -71,17 +71,13 @@ class AddChatMembers(Scaffold):
                     raw.functions.messages.AddChatUser(
                         chat_id=peer.chat_id,
                         user_id=await self.resolve_peer(user_id),
-                        fwd_limit=forward_limit
+                        fwd_limit=forward_limit,
                     )
                 )
         else:
             await self.send(
                 raw.functions.channels.InviteToChannel(
-                    channel=peer,
-                    users=[
-                        await self.resolve_peer(user_id)
-                        for user_id in user_ids
-                    ]
+                    channel=peer, users=[await self.resolve_peer(user_id) for user_id in user_ids]
                 )
             )
 

@@ -17,7 +17,8 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
-from ..object import Object
+
+from pyrogram.types.object import Object
 
 
 class Reaction(Object):
@@ -34,14 +35,7 @@ class Reaction(Object):
             Whether this is the chosen reaction.
     """
 
-    def __init__(
-        self,
-        *,
-        client: "pyrogram.Client" = None,
-        emoji: str,
-        count: int,
-        chosen: bool
-    ):
+    def __init__(self, *, client: "pyrogram.Client" = None, emoji: str, count: int, chosen: bool):
         super().__init__(client)
 
         self.emoji = emoji

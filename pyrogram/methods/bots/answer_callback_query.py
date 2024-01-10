@@ -27,7 +27,7 @@ class AnswerCallbackQuery(Scaffold):
         text: str = None,
         show_alert: bool = None,
         url: str = None,
-        cache_time: int = 0
+        cache_time: int = 0,
     ):
         """Send answers to callback queries sent from inline keyboards.
         The answer will be displayed to the user as a notification at the top of the chat screen or as an alert.
@@ -74,6 +74,6 @@ class AnswerCallbackQuery(Scaffold):
                 cache_time=cache_time,
                 alert=show_alert or None,
                 message=text or None,
-                url=url or None
+                url=url or None,
             )
         )

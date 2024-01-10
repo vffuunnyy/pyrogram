@@ -18,20 +18,20 @@
 
 import logging
 import re
+
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import utils
+from pyrogram import raw, utils
 from pyrogram.errors import PeerIdInvalid
 from pyrogram.scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
 
 class ResolvePeer(Scaffold):
     async def resolve_peer(
-        self,
-        peer_id: Union[int, str]
+        self, peer_id: Union[int, str]
     ) -> Union[raw.base.InputPeer, raw.base.InputUser, raw.base.InputChannel]:
         """Get the InputPeer of a known peer id.
         Useful whenever an InputPeer type is required.
@@ -71,11 +71,7 @@ class ResolvePeer(Scaffold):
                     try:
                         return await self.storage.get_peer_by_username(peer_id)
                     except KeyError:
-                        await self.send(
-                            raw.functions.contacts.ResolveUsername(
-                                username=peer_id
-                            )
-                        )
+                        await self.send(raw.functions.contacts.ResolveUsername(username=peer_id))
 
                         return await self.storage.get_peer_by_username(peer_id)
                 else:
@@ -90,28 +86,18 @@ class ResolvePeer(Scaffold):
                 await self.fetch_peers(
                     await self.send(
                         raw.functions.users.GetUsers(
-                            id=[
-                                raw.types.InputUser(
-                                    user_id=peer_id,
-                                    access_hash=0
-                                )
-                            ]
+                            id=[raw.types.InputUser(user_id=peer_id, access_hash=0)]
                         )
                     )
                 )
             elif peer_type == "chat":
-                await self.send(
-                    raw.functions.messages.GetChats(
-                        id=[-peer_id]
-                    )
-                )
+                await self.send(raw.functions.messages.GetChats(id=[-peer_id]))
             else:
                 await self.send(
                     raw.functions.channels.GetChannels(
                         id=[
                             raw.types.InputChannel(
-                                channel_id=utils.get_channel_id(peer_id),
-                                access_hash=0
+                                channel_id=utils.get_channel_id(peer_id), access_hash=0
                             )
                         ]
                     )

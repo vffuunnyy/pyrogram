@@ -16,14 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .change_cloud_password import ChangeCloudPassword
-from .enable_cloud_password import EnableCloudPassword
-from .remove_cloud_password import RemoveCloudPassword
+from pyrogram.methods.password.change_cloud_password import ChangeCloudPassword
+from pyrogram.methods.password.enable_cloud_password import EnableCloudPassword
+from pyrogram.methods.password.remove_cloud_password import RemoveCloudPassword
 
 
-class Password(
-    RemoveCloudPassword,
-    ChangeCloudPassword,
-    EnableCloudPassword
-):
+class Password(RemoveCloudPassword, ChangeCloudPassword, EnableCloudPassword):
     pass

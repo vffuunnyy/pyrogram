@@ -16,19 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable
+from collections.abc import Callable
 
 import pyrogram
+
 from pyrogram.filters import Filter
 from pyrogram.scaffold import Scaffold
 
 
 class OnUserStatus(Scaffold):
-    def on_user_status(
-        self=None,
-        filters=None,
-        group: int = 0
-    ) -> callable:
+    def on_user_status(self=None, filters=None, group: int = 0) -> callable:
         """Decorator for handling user status updates.
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
         :obj:`~pyrogram.handlers.UserStatusHandler`.
@@ -48,12 +45,10 @@ class OnUserStatus(Scaffold):
                 if not hasattr(func, "handlers"):
                     func.handlers = []
 
-                func.handlers.append(
-                    (
-                        pyrogram.handlers.UserStatusHandler(func, self),
-                        group if filters is None else filters
-                    )
-                )
+                func.handlers.append((
+                    pyrogram.handlers.UserStatusHandler(func, self),
+                    group if filters is None else filters,
+                ))
 
             return func
 

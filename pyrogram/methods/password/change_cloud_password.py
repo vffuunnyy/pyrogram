@@ -20,15 +20,12 @@ import os
 
 from pyrogram import raw
 from pyrogram.scaffold import Scaffold
-from pyrogram.utils import compute_password_hash, compute_password_check, btoi, itob
+from pyrogram.utils import btoi, compute_password_check, compute_password_hash, itob
 
 
 class ChangeCloudPassword(Scaffold):
     async def change_cloud_password(
-        self,
-        current_password: str,
-        new_password: str,
-        new_hint: str = ""
+        self, current_password: str, new_password: str, new_hint: str = ""
     ) -> bool:
         """Change your Two-Step Verification password (Cloud Password) with a new one.
 
@@ -70,10 +67,8 @@ class ChangeCloudPassword(Scaffold):
             raw.functions.account.UpdatePasswordSettings(
                 password=compute_password_check(r, current_password),
                 new_settings=raw.types.account.PasswordInputSettings(
-                    new_algo=r.new_algo,
-                    new_password_hash=new_hash,
-                    hint=new_hint
-                )
+                    new_algo=r.new_algo, new_password_hash=new_hash, hint=new_hint
+                ),
             )
         )
 

@@ -16,8 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -34,11 +33,7 @@ class GetMe(Scaffold):
                 me = app.get_me()
                 print(me)
         """
-        r = await self.send(
-            raw.functions.users.GetFullUser(
-                id=raw.types.InputUserSelf()
-            )
-        )
+        r = await self.send(raw.functions.users.GetFullUser(id=raw.types.InputUserSelf()))
 
         users = {u.id: u for u in r.users}
 

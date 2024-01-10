@@ -19,10 +19,10 @@
 from typing import List, Union
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
-from ..update import Update
+
+from pyrogram import raw, types
+from pyrogram.types.object import Object
+from pyrogram.types.update import Update
 
 
 class Poll(Object, Update):
@@ -63,14 +63,14 @@ class Poll(Object, Update):
         client: "pyrogram.Client" = None,
         id: str,
         question: str,
-        options: List["types.PollOption"],
+        options: list["types.PollOption"],
         total_voter_count: int,
         is_closed: bool,
         is_anonymous: bool = None,
         type: str = None,
         allows_multiple_answers: bool = None,
         # correct_option_id: int,
-        chosen_option: int = None
+        chosen_option: int = None,
     ):
         super().__init__(client)
 
@@ -86,7 +86,9 @@ class Poll(Object, Update):
         self.chosen_option = chosen_option
 
     @staticmethod
-    def _parse(client, media_poll: Union["raw.types.MessageMediaPoll", "raw.types.UpdateMessagePoll"]) -> "Poll":
+    def _parse(
+        client, media_poll: Union["raw.types.MessageMediaPoll", "raw.types.UpdateMessagePoll"]
+    ) -> "Poll":
         poll = media_poll.poll  # type: raw.types.Poll
         results = media_poll.results.results
         chosen_option = None
@@ -104,10 +106,7 @@ class Poll(Object, Update):
 
             options.append(
                 types.PollOption(
-                    text=answer.text,
-                    voter_count=voter_count,
-                    data=answer.option,
-                    client=client
+                    text=answer.text, voter_count=voter_count, data=answer.option, client=client
                 )
             )
 
@@ -121,7 +120,7 @@ class Poll(Object, Update):
             type="quiz" if poll.quiz else "regular",
             allows_multiple_answers=poll.multiple_choice,
             chosen_option=chosen_option,
-            client=client
+            client=client,
         )
 
     @staticmethod
@@ -139,10 +138,7 @@ class Poll(Object, Update):
 
             options.append(
                 types.PollOption(
-                    text="",
-                    voter_count=result.voters,
-                    data=result.option,
-                    client=client
+                    text="", voter_count=result.voters, data=result.option, client=client
                 )
             )
 
@@ -153,5 +149,5 @@ class Poll(Object, Update):
             total_voter_count=update.results.total_voters,
             is_closed=False,
             chosen_option=chosen_option,
-            client=client
+            client=client,
         )

@@ -24,9 +24,8 @@ from pyrogram.scaffold import Scaffold
 
 class DeleteContacts(Scaffold):
     async def delete_contacts(
-        self,
-        user_ids: Union[int, str, List[Union[int, str]]]
-    ) -> Union["types.User", List["types.User"], None]:
+        self, user_ids: Union[int, str, list[Union[int, str]]]
+    ) -> Union["types.User", list["types.User"], None]:
         """Delete contacts from your Telegram address book.
 
         Parameters:
@@ -51,9 +50,7 @@ class DeleteContacts(Scaffold):
             user_ids = [user_ids]
 
         r = await self.send(
-            raw.functions.contacts.DeleteContacts(
-                id=[await self.resolve_peer(i) for i in user_ids]
-            )
+            raw.functions.contacts.DeleteContacts(id=[await self.resolve_peer(i) for i in user_ids])
         )
 
         if not r.updates:

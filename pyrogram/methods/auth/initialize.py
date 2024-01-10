@@ -21,6 +21,7 @@ import logging
 from pyrogram.scaffold import Scaffold
 from pyrogram.syncer import Syncer
 
+
 log = logging.getLogger(__name__)
 
 

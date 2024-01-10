@@ -17,9 +17,9 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
+
+from pyrogram import raw, types
+from pyrogram.types.object import Object
 
 
 class ChatMember(Object):
@@ -153,7 +153,6 @@ class ChatMember(Object):
         restricted_by: "types.User" = None,
         is_member: bool = None,
         is_anonymous: bool = None,
-
         # Admin permissions
         can_be_edited: bool = None,
         can_manage_chat: bool = None,
@@ -166,7 +165,6 @@ class ChatMember(Object):
         can_invite_users: bool = None,
         can_pin_messages: bool = None,  # Groups and supergroups only
         can_manage_voice_chats: bool = None,
-
         # Restricted user permissions
         can_send_messages: bool = None,  # Text, contacts, locations and venues
         can_send_media_messages: bool = None,  # Audios, documents, photos, videos, video notes and voice notes
@@ -175,7 +173,7 @@ class ChatMember(Object):
         can_send_games: bool = None,
         can_use_inline_bots: bool = None,
         can_add_web_page_previews: bool = None,
-        can_send_polls: bool = None
+        can_send_polls: bool = None,
     ):
         super().__init__(client)
 
@@ -213,7 +211,9 @@ class ChatMember(Object):
 
     @staticmethod
     def _parse(client, member, users, chats) -> "ChatMember":
-        if not isinstance(member, (raw.types.ChannelParticipantBanned, raw.types.ChannelParticipantLeft)):
+        if not isinstance(
+            member, (raw.types.ChannelParticipantBanned, raw.types.ChannelParticipantLeft)
+        ):
             user = types.User._parse(client, users[member.user_id])
         else:
             if isinstance(member.peer, raw.types.PeerUser):
@@ -223,26 +223,28 @@ class ChatMember(Object):
 
         invited_by = (
             types.User._parse(client, users[member.inviter_id])
-            if getattr(member, "inviter_id", None) else None
+            if getattr(member, "inviter_id", None)
+            else None
         )
 
-        if isinstance(member, (raw.types.ChannelParticipant,
-                               raw.types.ChannelParticipantSelf,
-                               raw.types.ChatParticipant)):
+        if isinstance(
+            member,
+            (
+                raw.types.ChannelParticipant,
+                raw.types.ChannelParticipantSelf,
+                raw.types.ChatParticipant,
+            ),
+        ):
             return ChatMember(
                 user=user,
                 status="member",
                 joined_date=member.date,
                 invited_by=invited_by,
-                client=client
+                client=client,
             )
 
         if isinstance(member, raw.types.ChatParticipantCreator):
-            return ChatMember(
-                user=user,
-                status="creator",
-                client=client
-            )
+            return ChatMember(user=user, status="creator", client=client)
 
         if isinstance(member, raw.types.ChatParticipantAdmin):
             return ChatMember(
@@ -250,7 +252,7 @@ class ChatMember(Object):
                 status="administrator",
                 joined_date=member.date,
                 invited_by=invited_by,
-                client=client
+                client=client,
             )
 
         if isinstance(member, raw.types.ChannelParticipantCreator):
@@ -272,7 +274,7 @@ class ChatMember(Object):
                 can_promote_members=permissions.add_admins,
                 can_manage_voice_chats=permissions.manage_call,
                 is_anonymous=permissions.anonymous,
-                client=client
+                client=client,
             )
 
         if isinstance(member, raw.types.ChannelParticipantAdmin):
@@ -297,7 +299,7 @@ class ChatMember(Object):
                 can_promote_members=permissions.add_admins,
                 can_manage_voice_chats=permissions.manage_call,
                 is_anonymous=permissions.anonymous,
-                client=client
+                client=client,
             )
 
         if isinstance(member, raw.types.ChannelParticipantBanned):
@@ -321,5 +323,5 @@ class ChatMember(Object):
                 can_change_info=not denied_permissions.change_info,
                 can_invite_users=not denied_permissions.invite_users,
                 can_pin_messages=not denied_permissions.pin_messages,
-                client=client
+                client=client,
             )

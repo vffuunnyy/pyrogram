@@ -18,8 +18,7 @@
 
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -49,9 +48,7 @@ class RevokeChatInviteLink(Scaffold):
 
         r = await self.send(
             raw.functions.messages.EditExportedChatInvite(
-                peer=await self.resolve_peer(chat_id),
-                link=invite_link,
-                revoked=True
+                peer=await self.resolve_peer(chat_id), link=invite_link, revoked=True
             )
         )
 

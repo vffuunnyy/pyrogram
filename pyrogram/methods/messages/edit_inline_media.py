@@ -19,12 +19,10 @@
 import os
 import re
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 from pyrogram.file_id import FileType
+from pyrogram.methods.messages.inline_session import get_session
 from pyrogram.scaffold import Scaffold
-from .inline_session import get_session
 
 
 class EditInlineMedia(Scaffold):
@@ -32,7 +30,7 @@ class EditInlineMedia(Scaffold):
         self,
         inline_message_id: str,
         media: "types.InputMedia",
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        reply_markup: "types.InlineKeyboardMarkup" = None,
     ) -> bool:
         """Edit inline animation, audio, document, photo or video messages.
 
@@ -74,13 +72,9 @@ class EditInlineMedia(Scaffold):
 
         if isinstance(media, types.InputMediaPhoto):
             if os.path.isfile(media.media):
-                media = raw.types.InputMediaUploadedPhoto(
-                    file=await self.save_file(media.media)
-                )
+                media = raw.types.InputMediaUploadedPhoto(file=await self.save_file(media.media))
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaPhotoExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaPhotoExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO)
         elif isinstance(media, types.InputMediaVideo):
@@ -94,17 +88,15 @@ class EditInlineMedia(Scaffold):
                             supports_streaming=media.supports_streaming or None,
                             duration=media.duration,
                             w=media.width,
-                            h=media.height
+                            h=media.height,
                         ),
                         raw.types.DocumentAttributeFilename(
                             file_name=os.path.basename(media.media)
-                        )
-                    ]
+                        ),
+                    ],
                 )
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaDocumentExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.VIDEO)
         elif isinstance(media, types.InputMediaAudio):
@@ -115,19 +107,15 @@ class EditInlineMedia(Scaffold):
                     file=await self.save_file(media.media),
                     attributes=[
                         raw.types.DocumentAttributeAudio(
-                            duration=media.duration,
-                            performer=media.performer,
-                            title=media.title
+                            duration=media.duration, performer=media.performer, title=media.title
                         ),
                         raw.types.DocumentAttributeFilename(
                             file_name=os.path.basename(media.media)
-                        )
-                    ]
+                        ),
+                    ],
                 )
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaDocumentExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.AUDIO)
         elif isinstance(media, types.InputMediaAnimation):
@@ -141,18 +129,16 @@ class EditInlineMedia(Scaffold):
                             supports_streaming=True,
                             duration=media.duration,
                             w=media.width,
-                            h=media.height
+                            h=media.height,
                         ),
                         raw.types.DocumentAttributeFilename(
                             file_name=os.path.basename(media.media)
                         ),
-                        raw.types.DocumentAttributeAnimated()
-                    ]
+                        raw.types.DocumentAttributeAnimated(),
+                    ],
                 )
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaDocumentExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.ANIMATION)
         elif isinstance(media, types.InputMediaDocument):
@@ -162,15 +148,11 @@ class EditInlineMedia(Scaffold):
                     thumb=await self.save_file(media.thumb),
                     file=await self.save_file(media.media),
                     attributes=[
-                        raw.types.DocumentAttributeFilename(
-                            file_name=os.path.basename(media.media)
-                        )
-                    ]
+                        raw.types.DocumentAttributeFilename(file_name=os.path.basename(media.media))
+                    ],
                 )
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaDocumentExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.DOCUMENT)
 
@@ -184,7 +166,7 @@ class EditInlineMedia(Scaffold):
                 id=unpacked,
                 media=media,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
-                **await self.parser.parse(caption, parse_mode)
+                **await self.parser.parse(caption, parse_mode),
             ),
-            sleep_threshold=self.sleep_threshold
+            sleep_threshold=self.sleep_threshold,
         )

@@ -17,11 +17,12 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Union, List
 
-from pyrogram import raw
-from pyrogram import types
+from typing import List, Union
+
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
@@ -42,8 +43,8 @@ class GetChatMembers(Scaffold):
         offset: int = 0,
         limit: int = 200,
         query: str = "",
-        filter: str = Filters.RECENT
-    ) -> List["types.ChatMember"]:
+        filter: str = Filters.RECENT,
+    ) -> list["types.ChatMember"]:
         """Get a chunk of the members list of a chat.
 
         You can get up to 200 chat members at once.
@@ -102,16 +103,14 @@ class GetChatMembers(Scaffold):
         peer = await self.resolve_peer(chat_id)
 
         if isinstance(peer, raw.types.InputPeerChat):
-            r = await self.send(
-                raw.functions.messages.GetFullChat(
-                    chat_id=peer.chat_id
-                )
-            )
+            r = await self.send(raw.functions.messages.GetFullChat(chat_id=peer.chat_id))
 
             members = getattr(r.full_chat.participants, "participants", [])
             users = {i.id: i for i in r.users}
 
-            return types.List(types.ChatMember._parse(self, member, users, {}) for member in members)
+            return types.List(
+                types.ChatMember._parse(self, member, users, {}) for member in members
+            )
         elif isinstance(peer, raw.types.InputPeerChannel):
             filter = filter.lower()
 
@@ -132,19 +131,17 @@ class GetChatMembers(Scaffold):
 
             r = await self.send(
                 raw.functions.channels.GetParticipants(
-                    channel=peer,
-                    filter=filter,
-                    offset=offset,
-                    limit=limit,
-                    hash=0
+                    channel=peer, filter=filter, offset=offset, limit=limit, hash=0
                 ),
-                sleep_threshold=60
+                sleep_threshold=60,
             )
 
             members = r.participants
             users = {i.id: i for i in r.users}
             chats = {i.id: i for i in r.chats}
 
-            return types.List(types.ChatMember._parse(self, member, users, chats) for member in members)
+            return types.List(
+                types.ChatMember._parse(self, member, users, chats) for member in members
+            )
         else:
             raise ValueError(f'The chat_id "{chat_id}" belongs to a user')

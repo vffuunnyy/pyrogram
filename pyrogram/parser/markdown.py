@@ -18,11 +18,14 @@
 
 import html
 import re
+
 from typing import Optional
 
 import pyrogram
-from . import utils
-from .html import HTML
+
+from pyrogram.parser import utils
+from pyrogram.parser.html import HTML
+
 
 BOLD_DELIM = "**"
 ITALIC_DELIM = "__"
@@ -32,21 +35,25 @@ SPOILER_DELIM = "||"
 CODE_DELIM = "`"
 PRE_DELIM = "```"
 
-MARKDOWN_RE = re.compile(r"({d})|\[(.+?)\]\((.+?)\)".format(
-    d="|".join(
-        ["".join(i) for i in [
-            [rf"\{j}" for j in i]
+MARKDOWN_RE = re.compile(
+    r"({d})|\[(.+?)\]\((.+?)\)".format(
+        d="|".join([
+            "".join(i)
             for i in [
-                PRE_DELIM,
-                CODE_DELIM,
-                STRIKE_DELIM,
-                UNDERLINE_DELIM,
-                ITALIC_DELIM,
-                BOLD_DELIM,
-                SPOILER_DELIM
+                [rf"\{j}" for j in i]
+                for i in [
+                    PRE_DELIM,
+                    CODE_DELIM,
+                    STRIKE_DELIM,
+                    UNDERLINE_DELIM,
+                    ITALIC_DELIM,
+                    BOLD_DELIM,
+                    SPOILER_DELIM,
+                ]
             ]
-        ]]
-    )))
+        ])
+    )
+)
 
 OPENING_TAG = "<{}>"
 CLOSING_TAG = "</{}>"
@@ -144,8 +151,8 @@ class Markdown:
             else:
                 continue
 
-            entities_offsets.append((start_tag, start,))
-            entities_offsets.append((end_tag, end,))
+            entities_offsets.append((start_tag, start))
+            entities_offsets.append((end_tag, end))
 
         # sorting by offset (desc)
         entities_offsets.sort(key=lambda x: -x[1])

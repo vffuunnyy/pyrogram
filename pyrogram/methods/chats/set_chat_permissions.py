@@ -18,8 +18,7 @@
 
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -78,7 +77,7 @@ class SetChatPermissions(Scaffold):
                     change_info=not permissions.can_change_info,
                     invite_users=not permissions.can_invite_users,
                     pin_messages=not permissions.can_pin_messages,
-                )
+                ),
             )
         )
 

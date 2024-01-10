@@ -38,8 +38,5 @@ class MarkChatUnread(Scaffold):
         """
 
         return await self.send(
-            functions.messages.MarkDialogUnread(
-                peer=await self.resolve_peer(chat_id),
-                unread=True
-            )
+            functions.messages.MarkDialogUnread(peer=await self.resolve_peer(chat_id), unread=True)
         )

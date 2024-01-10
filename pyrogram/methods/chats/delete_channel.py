@@ -39,9 +39,7 @@ class DeleteChannel(Scaffold):
                 app.delete_channel(channel_id)
         """
         await self.send(
-            raw.functions.channels.DeleteChannel(
-                channel=await self.resolve_peer(chat_id)
-            )
+            raw.functions.channels.DeleteChannel(channel=await self.resolve_peer(chat_id))
         )
 
         return True

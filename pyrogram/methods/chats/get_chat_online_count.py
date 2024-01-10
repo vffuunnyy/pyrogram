@@ -39,8 +39,8 @@ class GetChatOnlineCount(Scaffold):
                 online = app.get_chat_online_count(chat_id)
                 print(online)
         """
-        return (await self.send(
-            raw.functions.messages.GetOnlines(
-                peer=await self.resolve_peer(chat_id)
+        return (
+            await self.send(
+                raw.functions.messages.GetOnlines(peer=await self.resolve_peer(chat_id))
             )
-        )).onlines
+        ).onlines

@@ -18,11 +18,9 @@
 
 from typing import Optional
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
+from pyrogram.methods.messages.inline_session import get_session
 from pyrogram.scaffold import Scaffold
-from .inline_session import get_session
 
 
 class EditInlineText(Scaffold):
@@ -32,7 +30,7 @@ class EditInlineText(Scaffold):
         text: str,
         parse_mode: Optional[str] = object,
         disable_web_page_preview: bool = None,
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        reply_markup: "types.InlineKeyboardMarkup" = None,
     ) -> bool:
         """Edit the text of inline messages.
 
@@ -83,7 +81,7 @@ class EditInlineText(Scaffold):
                 id=unpacked,
                 no_webpage=disable_web_page_preview or None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
-                **await self.parser.parse(text, parse_mode)
+                **await self.parser.parse(text, parse_mode),
             ),
-            sleep_threshold=self.sleep_threshold
+            sleep_threshold=self.sleep_threshold,
         )

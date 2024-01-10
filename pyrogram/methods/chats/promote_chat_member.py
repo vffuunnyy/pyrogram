@@ -37,7 +37,7 @@ class PromoteChatMember(Scaffold):
         can_invite_users: bool = False,
         can_pin_messages: bool = False,
         can_promote_members: bool = False,
-        can_manage_voice_chats: bool = False
+        can_manage_voice_chats: bool = False,
     ) -> bool:
         """Promote or demote a user in a supergroup or a channel.
 
@@ -113,9 +113,9 @@ class PromoteChatMember(Scaffold):
                     pin_messages=can_pin_messages or None,
                     add_admins=can_promote_members or None,
                     manage_call=can_manage_voice_chats or None,
-                    other=can_manage_chat or None
+                    other=can_manage_chat or None,
                 ),
-                rank=""
+                rank="",
             )
         )
 

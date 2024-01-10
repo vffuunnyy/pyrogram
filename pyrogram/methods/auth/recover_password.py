@@ -18,9 +18,9 @@
 
 import logging
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
@@ -40,11 +40,7 @@ class RecoverPassword(Scaffold):
         Raises:
             BadRequest: In case the recovery code is invalid.
         """
-        r = await self.send(
-            raw.functions.auth.RecoverPassword(
-                code=recovery_code
-            )
-        )
+        r = await self.send(raw.functions.auth.RecoverPassword(code=recovery_code))
 
         await self.storage.user_id(r.user.id)
         await self.storage.is_bot(False)

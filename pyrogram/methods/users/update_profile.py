@@ -22,10 +22,7 @@ from pyrogram.scaffold import Scaffold
 
 class UpdateProfile(Scaffold):
     async def update_profile(
-        self,
-        first_name: str = None,
-        last_name: str = None,
-        bio: str = None
+        self, first_name: str = None, last_name: str = None, bio: str = None
     ) -> bool:
         """Update your profile details such as first name, last name and bio.
 
@@ -62,9 +59,7 @@ class UpdateProfile(Scaffold):
         return bool(
             await self.send(
                 raw.functions.account.UpdateProfile(
-                    first_name=first_name,
-                    last_name=last_name,
-                    about=bio
+                    first_name=first_name, last_name=last_name, about=bio
                 )
             )
         )

@@ -39,9 +39,7 @@ class DeleteSupergroup(Scaffold):
                 app.delete_supergroup(supergroup_id)
         """
         await self.send(
-            raw.functions.channels.DeleteChannel(
-                channel=await self.resolve_peer(chat_id)
-            )
+            raw.functions.channels.DeleteChannel(channel=await self.resolve_peer(chat_id))
         )
 
         return True

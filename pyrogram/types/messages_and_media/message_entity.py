@@ -20,9 +20,9 @@ from enum import Enum, auto
 from typing import Optional
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
+
+from pyrogram import raw, types
+from pyrogram.types.object import Object
 
 
 class AutoName(Enum):
@@ -67,7 +67,7 @@ RAW_ENTITIES_TO_TYPE = {
     raw.types.MessageEntityBlockquote: MessageEntityType.BLOCKQUOTE,
     raw.types.MessageEntityTextUrl: MessageEntityType.TEXT_LINK,
     raw.types.MessageEntityMentionName: MessageEntityType.TEXT_MENTION,
-    raw.types.MessageEntityPhone: MessageEntityType.PHONE_NUMBER
+    raw.types.MessageEntityPhone: MessageEntityType.PHONE_NUMBER,
 }
 
 TYPE_TO_RAW_ENTITIES = {v.value: k for k, v in RAW_ENTITIES_TO_TYPE.items()}
@@ -123,7 +123,7 @@ class MessageEntity(Object):
         length: int,
         url: str = None,
         user: "types.User" = None,
-        language: str = None
+        language: str = None,
     ):
         super().__init__(client)
 
@@ -148,7 +148,7 @@ class MessageEntity(Object):
             url=getattr(entity, "url", None),
             user=types.User._parse(client, users.get(getattr(entity, "user_id", None), None)),
             language=getattr(entity, "language", None),
-            client=client
+            client=client,
         )
 
     async def write(self):

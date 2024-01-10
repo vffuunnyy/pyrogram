@@ -18,11 +18,11 @@
 
 import logging
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.errors import UserMigrate
 from pyrogram.scaffold import Scaffold
-from pyrogram.session import Session, Auth
+from pyrogram.session import Auth, Session
+
 
 log = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class SignInBot(Scaffold):
                         flags=0,
                         api_id=self.api_id,
                         api_hash=self.api_hash,
-                        bot_auth_token=bot_token
+                        bot_auth_token=bot_token,
                     )
                 )
             except UserMigrate as e:
@@ -57,13 +57,14 @@ class SignInBot(Scaffold):
                 await self.storage.dc_id(e.x)
                 await self.storage.auth_key(
                     await Auth(
-                        self, await self.storage.dc_id(),
-                        await self.storage.test_mode()
+                        self, await self.storage.dc_id(), await self.storage.test_mode()
                     ).create()
                 )
                 self.session = Session(
-                    self, await self.storage.dc_id(),
-                    await self.storage.auth_key(), await self.storage.test_mode()
+                    self,
+                    await self.storage.dc_id(),
+                    await self.storage.auth_key(),
+                    await self.storage.test_mode(),
                 )
 
                 await self.session.start()

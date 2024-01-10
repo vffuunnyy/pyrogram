@@ -19,20 +19,28 @@
 import asyncio
 import logging
 import os
+
 from hashlib import sha1
 from io import BytesIO
 
 import pyrogram
+
 from pyrogram import raw
 from pyrogram.connection import Connection
 from pyrogram.crypto import mtproto
 from pyrogram.errors import (
-    RPCError, InternalServerError, AuthKeyDuplicated, FloodWait, ServiceUnavailable, BadMsgNotification,
-    SecurityCheckMismatch
+    AuthKeyDuplicated,
+    BadMsgNotification,
+    FloodWait,
+    InternalServerError,
+    RPCError,
+    SecurityCheckMismatch,
+    ServiceUnavailable,
 )
 from pyrogram.raw.all import layer
-from pyrogram.raw.core import TLObject, MsgContainer, Int, FutureSalts
-from .internals import MsgId, MsgFactory
+from pyrogram.raw.core import FutureSalts, Int, MsgContainer, TLObject
+from pyrogram.session.internals import MsgFactory, MsgId
+
 
 log = logging.getLogger(__name__)
 
@@ -58,7 +66,7 @@ class Session:
         auth_key: bytes,
         test_mode: bool,
         is_media: bool = False,
-        is_cdn: bool = False
+        is_cdn: bool = False,
     ):
         self.client = client
         self.dc_id = dc_id
@@ -94,11 +102,7 @@ class Session:
     async def start(self):
         while True:
             self.connection = Connection(
-                self.dc_id,
-                self.test_mode,
-                self.client.ipv6,
-                self.client.proxy,
-                self.is_media
+                self.dc_id, self.test_mode, self.client.ipv6, self.client.proxy, self.is_media
             )
 
             try:
@@ -119,11 +123,11 @@ class Session:
                                 system_version=self.client.system_version,
                                 system_lang_code=self.client.lang_code,
                                 lang_code=self.client.lang_code,
-                                lang_pack="",
+                                lang_pack=self.client.lang_pack,
                                 query=raw.functions.help.GetConfig(),
-                            )
+                            ),
                         ),
-                        timeout=self.START_TIMEOUT
+                        timeout=self.START_TIMEOUT,
                     )
 
                 self.ping_task = self.loop.create_task(self.ping_worker())
@@ -186,17 +190,13 @@ class Session:
                 self.session_id,
                 self.auth_key,
                 self.auth_key_id,
-                self.stored_msg_ids
+                self.stored_msg_ids,
             )
         except SecurityCheckMismatch:
             self.connection.close()
             return
 
-        messages = (
-            data.body.messages
-            if isinstance(data.body, MsgContainer)
-            else [data]
-        )
+        messages = data.body.messages if isinstance(data.body, MsgContainer) else [data]
 
         # Call log.debug twice because calling it once by appending "data" to the previous string (i.e. f"Kind: {data}")
         # will cause "data" to be evaluated as string every time instead of only when debug is actually enabled.
@@ -205,7 +205,7 @@ class Session:
 
         for msg in messages:
             if msg.seq_no == 0:
-                MsgId.set_server_time(msg.msg_id / (2 ** 32))
+                MsgId.set_server_time(msg.msg_id / (2**32))
 
             if msg.seq_no % 2 != 0:
                 if msg.msg_id in self.pending_acks:
@@ -261,7 +261,8 @@ class Session:
                 await self._send(
                     raw.functions.PingDelayDisconnect(
                         ping_id=0, disconnect_delay=self.WAIT_TIMEOUT + 10
-                    ), False
+                    ),
+                    False,
                 )
             except (OSError, TimeoutError, RPCError):
                 pass
@@ -287,7 +288,9 @@ class Session:
 
         log.info("NetworkTask stopped")
 
-    async def _send(self, data: TLObject, wait_response: bool = True, timeout: float = WAIT_TIMEOUT):
+    async def _send(
+        self, data: TLObject, wait_response: bool = True, timeout: float = WAIT_TIMEOUT
+    ):
         message = self.msg_factory(data)
         msg_id = message.msg_id
 
@@ -296,7 +299,7 @@ class Session:
 
         # Call log.debug twice because calling it once by appending "data" to the previous string (i.e. f"Kind: {data}")
         # will cause "data" to be evaluated as string every time instead of only when debug is actually enabled.
-        log.debug(f"Sent:")
+        log.debug("Sent:")
         log.debug(message)
 
         payload = await self.loop.run_in_executor(
@@ -306,7 +309,7 @@ class Session:
             self.salt,
             self.session_id,
             self.auth_key,
-            self.auth_key_id
+            self.auth_key_id,
         )
 
         try:
@@ -326,7 +329,9 @@ class Session:
             if result is None:
                 raise TimeoutError
             elif isinstance(result, raw.types.RpcError):
-                if isinstance(data, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)):
+                if isinstance(
+                    data, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)
+                ):
                     data = data.query
 
                 RPCError.raise_it(result, type(data))
@@ -343,7 +348,7 @@ class Session:
         data: TLObject,
         retries: int = MAX_RETRIES,
         timeout: float = WAIT_TIMEOUT,
-        sleep_threshold: float = SLEEP_THRESHOLD
+        sleep_threshold: float = SLEEP_THRESHOLD,
     ):
         try:
             await asyncio.wait_for(self.is_connected.wait(), self.WAIT_TIMEOUT)
@@ -366,8 +371,10 @@ class Session:
                 if amount > sleep_threshold >= 0:
                     raise
 
-                log.warning(f'[{self.client.session_name}] Waiting for {amount} seconds before continuing '
-                            f'(required by "{query}")')
+                log.warning(
+                    f"[{self.client.session_name}] Waiting for {amount} seconds before continuing "
+                    f'(required by "{query}")'
+                )
 
                 await asyncio.sleep(amount)
             except (OSError, TimeoutError, InternalServerError, ServiceUnavailable) as e:
@@ -375,7 +382,8 @@ class Session:
                     raise e from None
 
                 (log.warning if retries < 2 else log.info)(
-                    f'[{Session.MAX_RETRIES - retries + 1}] Retrying "{query}" due to {str(e) or repr(e)}')
+                    f'[{Session.MAX_RETRIES - retries + 1}] Retrying "{query}" due to {str(e) or repr(e)}'
+                )
 
                 await asyncio.sleep(0.5)
 

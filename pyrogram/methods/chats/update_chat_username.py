@@ -16,18 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+from typing import Optional, Union
 
 from pyrogram import raw
 from pyrogram.scaffold import Scaffold
 
 
 class UpdateChatUsername(Scaffold):
-    async def update_chat_username(
-        self,
-        chat_id: Union[int, str],
-        username: Optional[str]
-    ) -> bool:
+    async def update_chat_username(self, chat_id: Union[int, str], username: Optional[str]) -> bool:
         """Update a channel or a supergroup username.
 
         To update your own username (for users only, not bots) you can use :meth:`~pyrogram.Client.update_username`.
@@ -55,10 +51,7 @@ class UpdateChatUsername(Scaffold):
         if isinstance(peer, raw.types.InputPeerChannel):
             return bool(
                 await self.send(
-                    raw.functions.channels.UpdateUsername(
-                        channel=peer,
-                        username=username or ""
-                    )
+                    raw.functions.channels.UpdateUsername(channel=peer, username=username or "")
                 )
             )
         else:

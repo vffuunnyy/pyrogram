@@ -23,6 +23,7 @@ from pyrogram.raw.core import TLObject
 from pyrogram.scaffold import Scaffold
 from pyrogram.session import Session
 
+
 log = logging.getLogger(__name__)
 
 
@@ -32,7 +33,7 @@ class Send(Scaffold):
         data: TLObject,
         retries: int = Session.MAX_RETRIES,
         timeout: float = Session.WAIT_TIMEOUT,
-        sleep_threshold: float = None
+        sleep_threshold: float = None,
     ):
         """Send raw Telegram queries.
 
@@ -75,10 +76,10 @@ class Send(Scaffold):
             data = raw.functions.InvokeWithTakeout(takeout_id=self.takeout_id, query=data)
 
         r = await self.session.send(
-            data, retries, timeout,
-            (sleep_threshold
-             if sleep_threshold is not None
-             else self.sleep_threshold)
+            data,
+            retries,
+            timeout,
+            (sleep_threshold if sleep_threshold is not None else self.sleep_threshold),
         )
 
         await self.fetch_peers(getattr(r, "users", []))

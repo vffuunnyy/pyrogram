@@ -19,9 +19,9 @@
 from typing import List, Union
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
+
+from pyrogram import raw, types
+from pyrogram.types.object import Object
 
 
 class ReplyKeyboardMarkup(Object):
@@ -54,11 +54,11 @@ class ReplyKeyboardMarkup(Object):
 
     def __init__(
         self,
-        keyboard: List[List[Union["types.KeyboardButton", str]]],
+        keyboard: list[list[Union["types.KeyboardButton", str]]],
         resize_keyboard: bool = None,
         one_time_keyboard: bool = None,
         selective: bool = None,
-        placeholder: str = None
+        placeholder: str = None,
     ):
         super().__init__()
 
@@ -85,20 +85,22 @@ class ReplyKeyboardMarkup(Object):
             resize_keyboard=kb.resize,
             one_time_keyboard=kb.single_use,
             selective=kb.selective,
-            placeholder=kb.placeholder
+            placeholder=kb.placeholder,
         )
 
     async def write(self, _: "pyrogram.Client"):
         return raw.types.ReplyKeyboardMarkup(
-            rows=[raw.types.KeyboardButtonRow(
-                buttons=[
-                    types.KeyboardButton(j).write()
-                    if isinstance(j, str) else j.write()
-                    for j in i
-                ]
-            ) for i in self.keyboard],
+            rows=[
+                raw.types.KeyboardButtonRow(
+                    buttons=[
+                        types.KeyboardButton(j).write() if isinstance(j, str) else j.write()
+                        for j in i
+                    ]
+                )
+                for i in self.keyboard
+            ],
             resize=self.resize_keyboard or None,
             single_use=self.one_time_keyboard or None,
             selective=self.selective or None,
-            placeholder=self.placeholder or None
+            placeholder=self.placeholder or None,
         )

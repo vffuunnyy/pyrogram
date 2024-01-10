@@ -19,17 +19,20 @@
 import asyncio
 import logging
 import time
+
 from hashlib import sha1
 from io import BytesIO
 from os import urandom
 
 import pyrogram
+
 from pyrogram import raw
 from pyrogram.connection import Connection
-from pyrogram.crypto import aes, rsa, prime
+from pyrogram.crypto import aes, prime, rsa
 from pyrogram.errors import SecurityCheckMismatch
-from pyrogram.raw.core import TLObject, Long, Int
-from .internals import MsgId
+from pyrogram.raw.core import Int, Long, TLObject
+from pyrogram.session.internals import MsgId
+
 
 log = logging.getLogger(__name__)
 
@@ -47,12 +50,7 @@ class Auth:
 
     @staticmethod
     def pack(data: TLObject) -> bytes:
-        return (
-            bytes(8)
-            + Long(MsgId())
-            + Int(len(data.write()))
-            + data.write()
-        )
+        return bytes(8) + Long(MsgId()) + Int(len(data.write())) + data.write()
 
     @staticmethod
     def unpack(b: BytesIO):
@@ -88,7 +86,9 @@ class Auth:
                 log.debug(f"Send req_pq: {nonce}")
                 res_pq = await self.send(raw.functions.ReqPqMulti(nonce=nonce))
                 log.debug(f"Got ResPq: {res_pq.server_nonce}")
-                log.debug(f"Server public key fingerprints: {res_pq.server_public_key_fingerprints}")
+                log.debug(
+                    f"Server public key fingerprints: {res_pq.server_public_key_fingerprints}"
+                )
 
                 for i in res_pq.server_public_key_fingerprints:
                     if i in rsa.server_public_keys:
@@ -122,7 +122,7 @@ class Auth:
                 ).write()
 
                 sha = sha1(data).digest()
-                padding = urandom(- (len(data) + len(sha)) % 255)
+                padding = urandom(-(len(data) + len(sha)) % 255)
                 data_with_hash = sha + data + padding
                 encrypted_data = rsa.encrypt(data_with_hash, public_key_fingerprint)
 
@@ -137,7 +137,7 @@ class Auth:
                         p=p.to_bytes(4, "big"),
                         q=q.to_bytes(4, "big"),
                         public_key_fingerprint=public_key_fingerprint,
-                        encrypted_data=encrypted_data
+                        encrypted_data=encrypted_data,
                     )
                 )
 
@@ -153,7 +153,8 @@ class Auth:
 
                 tmp_aes_iv = (
                     sha1(server_nonce + new_nonce).digest()[12:]
-                    + sha1(new_nonce + new_nonce).digest() + new_nonce[:4]
+                    + sha1(new_nonce + new_nonce).digest()
+                    + new_nonce[:4]
                 )
 
                 server_nonce = int.from_bytes(server_nonce, "little", signed=True)
@@ -178,23 +179,18 @@ class Auth:
                 retry_id = 0
 
                 data = raw.types.ClientDHInnerData(
-                    nonce=nonce,
-                    server_nonce=server_nonce,
-                    retry_id=retry_id,
-                    g_b=g_b
+                    nonce=nonce, server_nonce=server_nonce, retry_id=retry_id, g_b=g_b
                 ).write()
 
                 sha = sha1(data).digest()
-                padding = urandom(- (len(data) + len(sha)) % 16)
+                padding = urandom(-(len(data) + len(sha)) % 16)
                 data_with_hash = sha + data + padding
                 encrypted_data = aes.ige256_encrypt(data_with_hash, tmp_aes_key, tmp_aes_iv)
 
                 log.debug("Send set_client_DH_params")
                 set_client_dh_params_answer = await self.send(
                     raw.functions.SetClientDHParams(
-                        nonce=nonce,
-                        server_nonce=server_nonce,
-                        encrypted_data=encrypted_data
+                        nonce=nonce, server_nonce=server_nonce, encrypted_data=encrypted_data
                     )
                 )
 
@@ -237,7 +233,9 @@ class Auth:
                 SecurityCheckMismatch.check(server_nonce == server_dh_params.server_nonce)
                 # 3rd message
                 SecurityCheckMismatch.check(nonce == set_client_dh_params_answer.nonce)
-                SecurityCheckMismatch.check(server_nonce == set_client_dh_params_answer.server_nonce)
+                SecurityCheckMismatch.check(
+                    server_nonce == set_client_dh_params_answer.server_nonce
+                )
                 server_nonce = server_nonce.to_bytes(16, "little", signed=True)
                 log.debug("Nonce fields check: OK")
 
@@ -246,7 +244,9 @@ class Auth:
 
                 log.debug(f"Server salt: {int.from_bytes(server_salt, 'little')}")
 
-                log.info(f"Done auth key exchange: {set_client_dh_params_answer.__class__.__name__}")
+                log.info(
+                    f"Done auth key exchange: {set_client_dh_params_answer.__class__.__name__}"
+                )
             except Exception as e:
                 if retries_left:
                     retries_left -= 1

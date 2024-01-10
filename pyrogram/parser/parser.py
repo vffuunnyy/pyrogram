@@ -20,8 +20,9 @@ from collections import OrderedDict
 from typing import Optional
 
 import pyrogram
-from .html import HTML
-from .markdown import Markdown
+
+from pyrogram.parser.html import HTML
+from pyrogram.parser.markdown import Markdown
 
 
 class Parser:
@@ -40,10 +41,7 @@ class Parser:
                 mode = "combined"
 
         if mode is None:
-            return OrderedDict([
-                ("message", text),
-                ("entities", [])
-            ])
+            return OrderedDict([("message", text), ("entities", [])])
 
         mode = mode.lower()
 
@@ -56,10 +54,11 @@ class Parser:
         if mode == "html":
             return await self.html.parse(text)
 
-        raise ValueError('parse_mode must be one of {} or None. Not "{}"'.format(
-            ", ".join(f'"{m}"' for m in pyrogram.Client.PARSE_MODES[:-1]),
-            mode
-        ))
+        raise ValueError(
+            'parse_mode must be one of {} or None. Not "{}"'.format(
+                ", ".join(f'"{m}"' for m in pyrogram.Client.PARSE_MODES[:-1]), mode
+            )
+        )
 
     @staticmethod
     def unparse(text: str, entities: list, is_html: bool):

@@ -24,10 +24,7 @@ from pyrogram.scaffold import Scaffold
 
 class SendReaction(Scaffold):
     async def send_reaction(
-        self,
-        chat_id: Union[int, str],
-        message_id: int,
-        emoji: str = ""
+        self, chat_id: Union[int, str], message_id: int, emoji: str = ""
     ) -> bool:
         """Send a reaction to a message.
 
@@ -56,9 +53,7 @@ class SendReaction(Scaffold):
         """
         await self.send(
             raw.functions.messages.SendReaction(
-                peer=await self.resolve_peer(chat_id),
-                msg_id=message_id,
-                reaction=emoji
+                peer=await self.resolve_peer(chat_id), msg_id=message_id, reaction=emoji
             )
         )
 

@@ -17,9 +17,11 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
-from typing import Callable
+
+from collections.abc import Callable
 
 import pyrogram
+
 from pyrogram.filters import Filter
 from pyrogram.types import Update
 
@@ -35,9 +37,7 @@ class Handler:
                 return await self.filters(client, update)
             else:
                 return await client.loop.run_in_executor(
-                    client.executor,
-                    self.filters,
-                    client, update
+                    client.executor, self.filters, client, update
                 )
 
         return True

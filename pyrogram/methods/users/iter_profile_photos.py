@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, AsyncGenerator, Optional
+from collections.abc import AsyncGenerator
+from typing import Optional, Union
 
 from pyrogram import types
 from pyrogram.scaffold import Scaffold
@@ -62,11 +63,7 @@ class IterProfilePhotos(Scaffold):
         limit = min(100, total)
 
         while True:
-            photos = await self.get_profile_photos(
-                chat_id=chat_id,
-                offset=offset,
-                limit=limit
-            )
+            photos = await self.get_profile_photos(chat_id=chat_id, offset=offset, limit=limit)
 
             if not photos:
                 return

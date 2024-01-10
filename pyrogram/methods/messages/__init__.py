@@ -16,51 +16,51 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .copy_media_group import CopyMediaGroup
-from .copy_message import CopyMessage
-from .delete_messages import DeleteMessages
-from .download_media import DownloadMedia
-from .edit_inline_caption import EditInlineCaption
-from .edit_inline_media import EditInlineMedia
-from .edit_inline_reply_markup import EditInlineReplyMarkup
-from .edit_inline_text import EditInlineText
-from .edit_message_caption import EditMessageCaption
-from .edit_message_media import EditMessageMedia
-from .edit_message_reply_markup import EditMessageReplyMarkup
-from .edit_message_text import EditMessageText
-from .forward_messages import ForwardMessages
-from .get_discussion_message import GetDiscussionMessage
-from .get_history import GetHistory
-from .get_history_count import GetHistoryCount
-from .get_media_group import GetMediaGroup
-from .get_messages import GetMessages
-from .iter_history import IterHistory
-from .read_history import ReadHistory
-from .retract_vote import RetractVote
-from .search_global import SearchGlobal
-from .search_global_count import SearchGlobalCount
-from .search_messages import SearchMessages
-from .search_messages_count import SearchMessagesCount
-from .send_animation import SendAnimation
-from .send_audio import SendAudio
-from .send_cached_media import SendCachedMedia
-from .send_chat_action import SendChatAction
-from .send_contact import SendContact
-from .send_dice import SendDice
-from .send_document import SendDocument
-from .send_location import SendLocation
-from .send_media_group import SendMediaGroup
-from .send_message import SendMessage
-from .send_photo import SendPhoto
-from .send_poll import SendPoll
-from .send_reaction import SendReaction
-from .send_sticker import SendSticker
-from .send_venue import SendVenue
-from .send_video import SendVideo
-from .send_video_note import SendVideoNote
-from .send_voice import SendVoice
-from .stop_poll import StopPoll
-from .vote_poll import VotePoll
+from pyrogram.methods.messages.copy_media_group import CopyMediaGroup
+from pyrogram.methods.messages.copy_message import CopyMessage
+from pyrogram.methods.messages.delete_messages import DeleteMessages
+from pyrogram.methods.messages.download_media import DownloadMedia
+from pyrogram.methods.messages.edit_inline_caption import EditInlineCaption
+from pyrogram.methods.messages.edit_inline_media import EditInlineMedia
+from pyrogram.methods.messages.edit_inline_reply_markup import EditInlineReplyMarkup
+from pyrogram.methods.messages.edit_inline_text import EditInlineText
+from pyrogram.methods.messages.edit_message_caption import EditMessageCaption
+from pyrogram.methods.messages.edit_message_media import EditMessageMedia
+from pyrogram.methods.messages.edit_message_reply_markup import EditMessageReplyMarkup
+from pyrogram.methods.messages.edit_message_text import EditMessageText
+from pyrogram.methods.messages.forward_messages import ForwardMessages
+from pyrogram.methods.messages.get_discussion_message import GetDiscussionMessage
+from pyrogram.methods.messages.get_history import GetHistory
+from pyrogram.methods.messages.get_history_count import GetHistoryCount
+from pyrogram.methods.messages.get_media_group import GetMediaGroup
+from pyrogram.methods.messages.get_messages import GetMessages
+from pyrogram.methods.messages.iter_history import IterHistory
+from pyrogram.methods.messages.read_history import ReadHistory
+from pyrogram.methods.messages.retract_vote import RetractVote
+from pyrogram.methods.messages.search_global import SearchGlobal
+from pyrogram.methods.messages.search_global_count import SearchGlobalCount
+from pyrogram.methods.messages.search_messages import SearchMessages
+from pyrogram.methods.messages.search_messages_count import SearchMessagesCount
+from pyrogram.methods.messages.send_animation import SendAnimation
+from pyrogram.methods.messages.send_audio import SendAudio
+from pyrogram.methods.messages.send_cached_media import SendCachedMedia
+from pyrogram.methods.messages.send_chat_action import SendChatAction
+from pyrogram.methods.messages.send_contact import SendContact
+from pyrogram.methods.messages.send_dice import SendDice
+from pyrogram.methods.messages.send_document import SendDocument
+from pyrogram.methods.messages.send_location import SendLocation
+from pyrogram.methods.messages.send_media_group import SendMediaGroup
+from pyrogram.methods.messages.send_message import SendMessage
+from pyrogram.methods.messages.send_photo import SendPhoto
+from pyrogram.methods.messages.send_poll import SendPoll
+from pyrogram.methods.messages.send_reaction import SendReaction
+from pyrogram.methods.messages.send_sticker import SendSticker
+from pyrogram.methods.messages.send_venue import SendVenue
+from pyrogram.methods.messages.send_video import SendVideo
+from pyrogram.methods.messages.send_video_note import SendVideoNote
+from pyrogram.methods.messages.send_voice import SendVoice
+from pyrogram.methods.messages.stop_poll import StopPoll
+from pyrogram.methods.messages.vote_poll import VotePoll
 
 
 class Messages(
@@ -108,6 +108,6 @@ class Messages(
     SearchMessagesCount,
     SearchGlobalCount,
     GetDiscussionMessage,
-    SendReaction
+    SendReaction,
 ):
     pass

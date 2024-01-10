@@ -19,13 +19,16 @@
 import html
 import logging
 import re
+
 from html.parser import HTMLParser
 from typing import Optional
 
 import pyrogram
+
 from pyrogram import raw
 from pyrogram.errors import PeerIdInvalid
-from . import utils
+from pyrogram.parser import utils
+
 
 log = logging.getLogger(__name__)
 
@@ -141,7 +144,7 @@ class HTML:
 
         return {
             "message": utils.remove_surrogates(parser.text),
-            "entities": sorted(entities, key=lambda e: e.offset)
+            "entities": sorted(entities, key=lambda e: e.offset),
         }
 
     @staticmethod
@@ -172,16 +175,12 @@ class HTML:
             else:
                 continue
 
-            entities_offsets.append((start_tag, start,))
-            entities_offsets.append((end_tag, end,))
-            
+            entities_offsets.append((start_tag, start))
+            entities_offsets.append((end_tag, end))
+
         entities_offsets = map(
             lambda x: x[1],
-            sorted(
-                enumerate(entities_offsets),
-                key = lambda x: (x[1][1], x[0]),
-                reverse = True
-            )
+            sorted(enumerate(entities_offsets), key=lambda x: (x[1][1], x[0]), reverse=True),
         )
 
         for entity, offset in entities_offsets:

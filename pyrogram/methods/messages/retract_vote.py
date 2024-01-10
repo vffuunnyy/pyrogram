@@ -18,17 +18,12 @@
 
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
 class RetractVote(Scaffold):
-    async def retract_vote(
-        self,
-        chat_id: Union[int, str],
-        message_id: int
-    ) -> "types.Poll":
+    async def retract_vote(self, chat_id: Union[int, str], message_id: int) -> "types.Poll":
         """Retract your vote in a poll.
 
         Parameters:
@@ -50,9 +45,7 @@ class RetractVote(Scaffold):
         """
         r = await self.send(
             raw.functions.messages.SendVote(
-                peer=await self.resolve_peer(chat_id),
-                msg_id=message_id,
-                options=[]
+                peer=await self.resolve_peer(chat_id), msg_id=message_id, options=[]
             )
         )
 

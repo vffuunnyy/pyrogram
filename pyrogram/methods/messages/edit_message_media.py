@@ -18,11 +18,10 @@
 
 import os
 import re
+
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 from pyrogram.file_id import FileType
 from pyrogram.scaffold import Scaffold
 
@@ -34,7 +33,7 @@ class EditMessageMedia(Scaffold):
         message_id: int,
         media: "types.InputMedia",
         reply_markup: "types.InlineKeyboardMarkup" = None,
-        file_name: str = None
+        file_name: str = None,
     ) -> "types.Message":
         """Edit animation, audio, document, photo or video messages.
 
@@ -92,7 +91,7 @@ class EditMessageMedia(Scaffold):
                         peer=await self.resolve_peer(chat_id),
                         media=raw.types.InputMediaUploadedPhoto(
                             file=await self.save_file(media.media)
-                        )
+                        ),
                     )
                 )
 
@@ -100,13 +99,11 @@ class EditMessageMedia(Scaffold):
                     id=raw.types.InputPhoto(
                         id=media.photo.id,
                         access_hash=media.photo.access_hash,
-                        file_reference=media.photo.file_reference
+                        file_reference=media.photo.file_reference,
                     )
                 )
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaPhotoExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaPhotoExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO)
         elif isinstance(media, types.InputMediaVideo):
@@ -123,13 +120,13 @@ class EditMessageMedia(Scaffold):
                                     supports_streaming=media.supports_streaming or None,
                                     duration=media.duration,
                                     w=media.width,
-                                    h=media.height
+                                    h=media.height,
                                 ),
                                 raw.types.DocumentAttributeFilename(
                                     file_name=file_name or os.path.basename(media.media)
-                                )
-                            ]
-                        )
+                                ),
+                            ],
+                        ),
                     )
                 )
 
@@ -137,13 +134,11 @@ class EditMessageMedia(Scaffold):
                     id=raw.types.InputDocument(
                         id=media.document.id,
                         access_hash=media.document.access_hash,
-                        file_reference=media.document.file_reference
+                        file_reference=media.document.file_reference,
                     )
                 )
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaDocumentExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.VIDEO)
         elif isinstance(media, types.InputMediaAudio):
@@ -159,13 +154,13 @@ class EditMessageMedia(Scaffold):
                                 raw.types.DocumentAttributeAudio(
                                     duration=media.duration,
                                     performer=media.performer,
-                                    title=media.title
+                                    title=media.title,
                                 ),
                                 raw.types.DocumentAttributeFilename(
                                     file_name=file_name or os.path.basename(media.media)
-                                )
-                            ]
-                        )
+                                ),
+                            ],
+                        ),
                     )
                 )
 
@@ -173,13 +168,11 @@ class EditMessageMedia(Scaffold):
                     id=raw.types.InputDocument(
                         id=media.document.id,
                         access_hash=media.document.access_hash,
-                        file_reference=media.document.file_reference
+                        file_reference=media.document.file_reference,
                     )
                 )
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaDocumentExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.AUDIO)
         elif isinstance(media, types.InputMediaAnimation):
@@ -196,14 +189,14 @@ class EditMessageMedia(Scaffold):
                                     supports_streaming=True,
                                     duration=media.duration,
                                     w=media.width,
-                                    h=media.height
+                                    h=media.height,
                                 ),
                                 raw.types.DocumentAttributeFilename(
                                     file_name=file_name or os.path.basename(media.media)
                                 ),
-                                raw.types.DocumentAttributeAnimated()
-                            ]
-                        )
+                                raw.types.DocumentAttributeAnimated(),
+                            ],
+                        ),
                     )
                 )
 
@@ -211,13 +204,11 @@ class EditMessageMedia(Scaffold):
                     id=raw.types.InputDocument(
                         id=media.document.id,
                         access_hash=media.document.access_hash,
-                        file_reference=media.document.file_reference
+                        file_reference=media.document.file_reference,
                     )
                 )
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaDocumentExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.ANIMATION)
         elif isinstance(media, types.InputMediaDocument):
@@ -233,8 +224,8 @@ class EditMessageMedia(Scaffold):
                                 raw.types.DocumentAttributeFilename(
                                     file_name=file_name or os.path.basename(media.media)
                                 )
-                            ]
-                        )
+                            ],
+                        ),
                     )
                 )
 
@@ -242,13 +233,11 @@ class EditMessageMedia(Scaffold):
                     id=raw.types.InputDocument(
                         id=media.document.id,
                         access_hash=media.document.access_hash,
-                        file_reference=media.document.file_reference
+                        file_reference=media.document.file_reference,
                     )
                 )
             elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
+                media = raw.types.InputMediaDocumentExternal(url=media.media)
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.DOCUMENT)
 
@@ -259,14 +248,12 @@ class EditMessageMedia(Scaffold):
                 media=media,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 message=message,
-                entities=entities
+                entities=entities,
             )
         )
 
         for i in r.updates:
             if isinstance(i, (raw.types.UpdateEditMessage, raw.types.UpdateEditChannelMessage)):
                 return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats}
+                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
                 )

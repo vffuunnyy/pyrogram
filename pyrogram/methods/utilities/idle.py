@@ -19,7 +19,9 @@
 import asyncio
 import logging
 import signal
-from signal import signal as signal_fn, SIGINT, SIGTERM, SIGABRT
+
+from signal import SIGABRT, SIGINT, SIGTERM, signal as signal_fn
+
 
 log = logging.getLogger(__name__)
 
@@ -27,8 +29,7 @@ is_idling = False
 
 # Signal number to name
 signals = {
-    k: v for v, k in signal.__dict__.items()
-    if v.startswith("SIG") and not v.startswith("SIG_")
+    k: v for v, k in signal.__dict__.items() if v.startswith("SIG") and not v.startswith("SIG_")
 }
 
 

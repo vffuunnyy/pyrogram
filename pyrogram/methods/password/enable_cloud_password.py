@@ -20,16 +20,11 @@ import os
 
 from pyrogram import raw
 from pyrogram.scaffold import Scaffold
-from pyrogram.utils import compute_password_hash, btoi, itob
+from pyrogram.utils import btoi, compute_password_hash, itob
 
 
 class EnableCloudPassword(Scaffold):
-    async def enable_cloud_password(
-        self,
-        password: str,
-        hint: str = "",
-        email: str = None
-    ) -> bool:
+    async def enable_cloud_password(self, password: str, hint: str = "", email: str = None) -> bool:
         """Enable the Two-Step Verification security feature (Cloud Password) on your account.
 
         This password will be asked when you log-in on a new device in addition to the SMS code.
@@ -75,11 +70,8 @@ class EnableCloudPassword(Scaffold):
             raw.functions.account.UpdatePasswordSettings(
                 password=raw.types.InputCheckPasswordEmpty(),
                 new_settings=raw.types.account.PasswordInputSettings(
-                    new_algo=r.new_algo,
-                    new_password_hash=new_hash,
-                    hint=hint,
-                    email=email
-                )
+                    new_algo=r.new_algo, new_password_hash=new_hash, hint=hint, email=email
+                ),
             )
         )
 

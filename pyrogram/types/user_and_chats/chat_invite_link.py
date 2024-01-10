@@ -19,9 +19,9 @@
 from typing import Dict
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
+
+from pyrogram import raw, types
+from pyrogram.types.object import Object
 
 
 class ChatInviteLink(Object):
@@ -65,7 +65,8 @@ class ChatInviteLink(Object):
     """
 
     def __init__(
-        self, *,
+        self,
+        *,
         invite_link: str,
         date: int,
         is_primary: bool = None,
@@ -77,7 +78,7 @@ class ChatInviteLink(Object):
         expire_date: int = None,
         member_limit: int = None,
         member_count: int = None,
-        pending_join_request_count: int = None
+        pending_join_request_count: int = None,
     ):
         super().__init__()
 
@@ -98,13 +99,9 @@ class ChatInviteLink(Object):
     def _parse(
         client: "pyrogram.Client",
         invite: "raw.base.ExportedChatInvite",
-        users: Dict[int, "raw.types.User"] = None
+        users: dict[int, "raw.types.User"] = None,
     ) -> "ChatInviteLink":
-        creator = (
-            types.User._parse(client, users[invite.admin_id])
-            if users is not None
-            else None
-        )
+        creator = types.User._parse(client, users[invite.admin_id]) if users is not None else None
 
         return ChatInviteLink(
             invite_link=invite.link,
@@ -117,5 +114,5 @@ class ChatInviteLink(Object):
             expire_date=invite.expire_date,
             member_limit=invite.usage_limit,
             member_count=invite.usage,
-            pending_join_request_count=invite.requested
+            pending_join_request_count=invite.requested,
         )

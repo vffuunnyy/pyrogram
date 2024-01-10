@@ -18,8 +18,7 @@
 
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -51,8 +50,7 @@ class GetDiscussionMessage(Scaffold):
         """
         r = await self.send(
             raw.functions.messages.GetDiscussionMessage(
-                peer=await self.resolve_peer(chat_id),
-                msg_id=message_id
+                peer=await self.resolve_peer(chat_id), msg_id=message_id
             )
         )
 

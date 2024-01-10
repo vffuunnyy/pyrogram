@@ -18,8 +18,8 @@
 
 from typing import List
 
-from ..messages_and_media import MessageEntity
-from ..object import Object
+from pyrogram.types.messages_and_media import MessageEntity
+from pyrogram.types.object import Object
 
 
 class InputMedia(Object):
@@ -39,7 +39,7 @@ class InputMedia(Object):
         media: str,
         caption: str = "",
         parse_mode: str = None,
-        caption_entities: List[MessageEntity] = None
+        caption_entities: list[MessageEntity] = None,
     ):
         super().__init__()
 

@@ -18,10 +18,10 @@
 
 import logging
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 from pyrogram.utils import compute_password_check
+
 
 log = logging.getLogger(__name__)
 
@@ -43,8 +43,7 @@ class CheckPassword(Scaffold):
         r = await self.send(
             raw.functions.auth.CheckPassword(
                 password=compute_password_check(
-                    await self.send(raw.functions.account.GetPassword()),
-                    password
+                    await self.send(raw.functions.account.GetPassword()), password
                 )
             )
         )

@@ -17,10 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from io import BytesIO
-from struct import unpack, pack
-from typing import cast, Any
+from struct import pack, unpack
+from typing import Any, cast
 
-from ..tl_object import TLObject
+from pyrogram.raw.core.tl_object import TLObject
 
 
 class Double(bytes, TLObject):

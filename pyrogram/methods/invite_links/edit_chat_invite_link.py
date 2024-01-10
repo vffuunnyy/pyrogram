@@ -18,8 +18,7 @@
 
 from typing import Union
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
 
 
@@ -31,7 +30,7 @@ class EditChatInviteLink(Scaffold):
         name: str = None,
         expire_date: int = None,
         member_limit: int = None,
-        creates_join_request: bool = None
+        creates_join_request: bool = None,
     ) -> "types.ChatInviteLink":
         """Edit a non-primary invite link.
 
@@ -80,7 +79,7 @@ class EditChatInviteLink(Scaffold):
                 expire_date=expire_date,
                 usage_limit=member_limit,
                 title=name,
-                request_needed=creates_join_request
+                request_needed=creates_join_request,
             )
         )
 

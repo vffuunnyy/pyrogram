@@ -23,10 +23,7 @@ from pyrogram.scaffold import Scaffold
 
 
 class BlockUser(Scaffold):
-    async def block_user(
-        self,
-        user_id: Union[int, str]
-    ) -> bool:
+    async def block_user(self, user_id: Union[int, str]) -> bool:
         """Block a user.
 
         Parameters:
@@ -44,9 +41,5 @@ class BlockUser(Scaffold):
                 app.block_user(user_id)
         """
         return bool(
-            await self.send(
-                raw.functions.contacts.Block(
-                    id=await self.resolve_peer(user_id)
-                )
-            )
+            await self.send(raw.functions.contacts.Block(id=await self.resolve_peer(user_id)))
         )

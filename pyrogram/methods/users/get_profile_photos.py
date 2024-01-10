@@ -16,21 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List
+from typing import List, Union
 
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 from pyrogram.scaffold import Scaffold
 
 
 class GetProfilePhotos(Scaffold):
     async def get_profile_photos(
-        self,
-        chat_id: Union[int, str],
-        offset: int = 0,
-        limit: int = 100
-    ) -> List["types.Photo"]:
+        self, chat_id: Union[int, str], offset: int = 0, limit: int = 100
+    ) -> list["types.Photo"]:
         """Get a list of profile pictures for a user or a chat.
 
         Parameters:
@@ -65,11 +60,7 @@ class GetProfilePhotos(Scaffold):
         peer_id = await self.resolve_peer(chat_id)
 
         if isinstance(peer_id, raw.types.InputPeerChannel):
-            r = await self.send(
-                raw.functions.channels.GetFullChannel(
-                    channel=peer_id
-                )
-            )
+            r = await self.send(raw.functions.channels.GetFullChannel(channel=peer_id))
 
             current = types.Photo._parse(self, r.full_chat.chat_photo) or []
 
@@ -87,9 +78,9 @@ class GetProfilePhotos(Scaffold):
                         limit=limit,
                         max_id=0,
                         min_id=0,
-                        hash=0
+                        hash=0,
                     )
-                )
+                ),
             )
 
             extra = [message.new_chat_photo for message in r]
@@ -109,10 +100,7 @@ class GetProfilePhotos(Scaffold):
         else:
             r = await self.send(
                 raw.functions.photos.GetUserPhotos(
-                    user_id=peer_id,
-                    offset=offset,
-                    max_id=0,
-                    limit=limit
+                    user_id=peer_id, offset=offset, max_id=0, limit=limit
                 )
             )
 

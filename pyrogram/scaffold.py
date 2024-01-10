@@ -21,15 +21,17 @@ import os
 import platform
 import re
 import sys
+
 from io import StringIO
 from mimetypes import MimeTypes
 from pathlib import Path
 
 import pyrogram
+
 from pyrogram import __version__
+from pyrogram.mime_types import mime_types
 from pyrogram.parser import Parser
 from pyrogram.session.internals import MsgId
-from .mime_types import mime_types
 
 
 class Scaffold:
@@ -41,7 +43,9 @@ class Scaffold:
 
     PARENT_DIR = Path(sys.argv[0]).parent
 
-    INVITE_LINK_RE = re.compile(r"^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:joinchat/|\+))([\w-]+)$")
+    INVITE_LINK_RE = re.compile(
+        r"^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:joinchat/|\+))([\w-]+)$"
+    )
     WORKERS = min(32, os.cpu_count() + 4)
     WORKDIR = PARENT_DIR
     CONFIG_FILE = PARENT_DIR / "config.ini"

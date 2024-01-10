@@ -24,9 +24,7 @@ from pyrogram.scaffold import Scaffold
 
 class SetSendAsChat(Scaffold):
     async def set_send_as_chat(
-        self,
-        chat_id: Union[int, str],
-        send_as_chat_id: Union[int, str]
+        self, chat_id: Union[int, str], send_as_chat_id: Union[int, str]
     ) -> bool:
         """Set the default "send_as" chat for a chat.
 
@@ -50,6 +48,6 @@ class SetSendAsChat(Scaffold):
         return await self.send(
             raw.functions.messages.SaveDefaultSendAs(
                 peer=await self.resolve_peer(chat_id),
-                send_as=await self.resolve_peer(send_as_chat_id)
+                send_as=await self.resolve_peer(send_as_chat_id),
             )
         )

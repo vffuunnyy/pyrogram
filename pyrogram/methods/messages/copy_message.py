@@ -17,10 +17,12 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Union, List, Optional
+
+from typing import List, Optional, Union
 
 from pyrogram import types
 from pyrogram.scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
@@ -33,7 +35,7 @@ class CopyMessage(Scaffold):
         message_id: int,
         caption: str = None,
         parse_mode: Optional[str] = object,
-        caption_entities: List["types.MessageEntity"] = None,
+        caption_entities: list["types.MessageEntity"] = None,
         disable_notification: bool = None,
         reply_to_message_id: int = None,
         schedule_date: int = None,
@@ -42,9 +44,9 @@ class CopyMessage(Scaffold):
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ] = None
-    ) -> List["types.Message"]:
+            "types.ForceReply",
+        ] = None,
+    ) -> list["types.Message"]:
         """Copy messages of any kind.
 
         The method is analogous to the method :meth:`~Client.forward_messages`, but the copied message doesn't have a
@@ -117,5 +119,5 @@ class CopyMessage(Scaffold):
             reply_to_message_id=reply_to_message_id,
             schedule_date=schedule_date,
             protect_content=protect_content,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )

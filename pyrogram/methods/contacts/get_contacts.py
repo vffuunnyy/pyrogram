@@ -17,17 +17,18 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+
 from typing import List
 
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.scaffold import Scaffold
+
 
 log = logging.getLogger(__name__)
 
 
 class GetContacts(Scaffold):
-    async def get_contacts(self) -> List["types.User"]:
+    async def get_contacts(self) -> list["types.User"]:
         """Get contacts from your Telegram address book.
 
         Returns:

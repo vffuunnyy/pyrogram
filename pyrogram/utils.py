@@ -22,14 +22,15 @@ import functools
 import hashlib
 import os
 import struct
+
 from concurrent.futures.thread import ThreadPoolExecutor
 from getpass import getpass
-from typing import Union, List, Dict, Optional
+from typing import Dict, List, Optional, Union
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram.file_id import FileId, FileType, PHOTO_TYPES, DOCUMENT_TYPES
+
+from pyrogram import raw, types
+from pyrogram.file_id import DOCUMENT_TYPES, PHOTO_TYPES, FileId, FileType
 
 
 async def ainput(prompt: str = "", *, hide: bool = False):
@@ -40,19 +41,22 @@ async def ainput(prompt: str = "", *, hide: bool = False):
 
 
 def get_input_media_from_file_id(
-    file_id: str,
-    expected_file_type: FileType = None
+    file_id: str, expected_file_type: FileType = None
 ) -> Union["raw.types.InputMediaPhoto", "raw.types.InputMediaDocument"]:
     try:
         decoded = FileId.decode(file_id)
     except Exception:
-        raise ValueError(f'Failed to decode "{file_id}". The value does not represent an existing local file, '
-                         f'HTTP URL, or valid file id.')
+        raise ValueError(
+            f'Failed to decode "{file_id}". The value does not represent an existing local file, '
+            f"HTTP URL, or valid file id."
+        )
 
     file_type = decoded.file_type
 
     if expected_file_type is not None and file_type != expected_file_type:
-        raise ValueError(f"Expected {expected_file_type.name}, got {file_type.name} file id instead")
+        raise ValueError(
+            f"Expected {expected_file_type.name}, got {file_type.name} file id instead"
+        )
 
     if file_type in (FileType.THUMBNAIL, FileType.CHAT_PHOTO):
         raise ValueError(f"This file id can only be used for download: {file_id}")
@@ -62,7 +66,7 @@ def get_input_media_from_file_id(
             id=raw.types.InputPhoto(
                 id=decoded.media_id,
                 access_hash=decoded.access_hash,
-                file_reference=decoded.file_reference
+                file_reference=decoded.file_reference,
             )
         )
 
@@ -71,14 +75,16 @@ def get_input_media_from_file_id(
             id=raw.types.InputDocument(
                 id=decoded.media_id,
                 access_hash=decoded.access_hash,
-                file_reference=decoded.file_reference
+                file_reference=decoded.file_reference,
             )
         )
 
     raise ValueError(f"Unknown file id: {file_id}")
 
 
-async def parse_messages(client, messages: "raw.types.messages.Messages", replies: int = 1) -> List["types.Message"]:
+async def parse_messages(
+    client, messages: "raw.types.messages.Messages", replies: int = 1
+) -> list["types.Message"]:
     users = {i.id: i for i in messages.users}
     chats = {i.id: i for i in messages.chats}
 
@@ -108,9 +114,7 @@ async def parse_messages(client, messages: "raw.types.messages.Messages", replie
                 chat_id = 0
 
             reply_messages = await client.get_messages(
-                chat_id,
-                reply_to_message_ids=messages_with_replies.keys(),
-                replies=replies - 1
+                chat_id, reply_to_message_ids=messages_with_replies.keys(), replies=replies - 1
             )
 
             for message in parsed_messages:
@@ -123,7 +127,7 @@ async def parse_messages(client, messages: "raw.types.messages.Messages", replie
     return types.List(parsed_messages)
 
 
-def parse_deleted_messages(client, update) -> List["types.Message"]:
+def parse_deleted_messages(client, update) -> list["types.Message"]:
     messages = update.messages
     channel_id = getattr(update, "channel_id", None)
 
@@ -133,12 +137,10 @@ def parse_deleted_messages(client, update) -> List["types.Message"]:
         parsed_messages.append(
             types.Message(
                 message_id=message,
-                chat=types.Chat(
-                    id=get_channel_id(channel_id),
-                    type="channel",
-                    client=client
-                ) if channel_id is not None else None,
-                client=client
+                chat=types.Chat(id=get_channel_id(channel_id), type="channel", client=client)
+                if channel_id is not None
+                else None,
+                client=client,
             )
         )
 
@@ -149,11 +151,7 @@ def unpack_inline_message_id(inline_message_id: str) -> "raw.types.InputBotInlin
     r = inline_message_id + "=" * (-len(inline_message_id) % 4)
     r = struct.unpack("<iqq", base64.b64decode(r, altchars=b"-_"))
 
-    return raw.types.InputBotInlineMessageID(
-        dc_id=r[0],
-        id=r[1],
-        access_hash=r[2]
-    )
+    return raw.types.InputBotInlineMessageID(dc_id=r[0], id=r[1], access_hash=r[2])
 
 
 MIN_CHANNEL_ID = -1002147483647
@@ -193,7 +191,7 @@ def get_peer_id(peer: raw.base.Peer) -> int:
 
 def get_peer_type(peer_id: int) -> str:
     if peer_id < 0:
-        if MIN_CHAT_ID <= peer_id:
+        if peer_id >= MIN_CHAT_ID:
             return "chat"
 
         if MIN_CHANNEL_ID <= peer_id < MAX_CHANNEL_ID:
@@ -224,8 +222,9 @@ def xor(a: bytes, b: bytes) -> bytes:
     return bytes(i ^ j for i, j in zip(a, b))
 
 
-def compute_password_hash(algo: raw.types.PasswordKdfAlgoSHA256SHA256PBKDF2HMACSHA512iter100000SHA256ModPow,
-                          password: str) -> bytes:
+def compute_password_hash(
+    algo: raw.types.PasswordKdfAlgoSHA256SHA256PBKDF2HMACSHA512iter100000SHA256ModPow, password: str
+) -> bytes:
     hash1 = sha256(algo.salt1 + password.encode() + algo.salt1)
     hash2 = sha256(algo.salt2 + hash1 + algo.salt2)
     hash3 = hashlib.pbkdf2_hmac("sha512", hash2, algo.salt1, 100000)
@@ -234,7 +233,9 @@ def compute_password_hash(algo: raw.types.PasswordKdfAlgoSHA256SHA256PBKDF2HMACS
 
 
 # noinspection PyPep8Naming
-def compute_password_check(r: raw.types.account.Password, password: str) -> raw.types.InputCheckPasswordSRP:
+def compute_password_check(
+    r: raw.types.account.Password, password: str
+) -> raw.types.InputCheckPasswordSRP:
     algo = r.current_algo
 
     p_bytes = algo.p
@@ -292,11 +293,8 @@ def compute_password_check(r: raw.types.account.Password, password: str) -> raw.
 
 
 async def parse_text_entities(
-    client: "pyrogram.Client",
-    text: str,
-    parse_mode: str,
-    entities: List["types.MessageEntity"]
-) -> Dict[str, raw.base.MessageEntity]:
+    client: "pyrogram.Client", text: str, parse_mode: str, entities: list["types.MessageEntity"]
+) -> dict[str, raw.base.MessageEntity]:
     if entities:
         # Inject the client instance because parsing user mentions requires it
         for entity in entities:
@@ -306,7 +304,4 @@ async def parse_text_entities(
     else:
         text, entities = (await client.parser.parse(text, parse_mode)).values()
 
-    return {
-        "message": text,
-        "entities": entities
-    }
+    return {"message": text, "entities": entities}

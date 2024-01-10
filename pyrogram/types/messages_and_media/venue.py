@@ -17,9 +17,9 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from ..object import Object
+
+from pyrogram import raw, types
+from pyrogram.types.object import Object
 
 
 class Venue(Object):
@@ -52,7 +52,7 @@ class Venue(Object):
         title: str,
         address: str,
         foursquare_id: str = None,
-        foursquare_type: str = None
+        foursquare_type: str = None,
     ):
         super().__init__(client)
 
@@ -70,5 +70,5 @@ class Venue(Object):
             address=venue.address,
             foursquare_id=venue.venue_id or None,
             foursquare_type=venue.venue_type,
-            client=client
+            client=client,
         )

@@ -23,10 +23,7 @@ from pyrogram.scaffold import Scaffold
 
 
 class DeleteChatPhoto(Scaffold):
-    async def delete_chat_photo(
-        self,
-        chat_id: Union[int, str]
-    ) -> bool:
+    async def delete_chat_photo(self, chat_id: Union[int, str]) -> bool:
         """Delete a chat photo.
 
         You must be an administrator in the chat for this to work and must have the appropriate admin rights.
@@ -51,15 +48,13 @@ class DeleteChatPhoto(Scaffold):
         if isinstance(peer, raw.types.InputPeerChat):
             await self.send(
                 raw.functions.messages.EditChatPhoto(
-                    chat_id=peer.chat_id,
-                    photo=raw.types.InputChatPhotoEmpty()
+                    chat_id=peer.chat_id, photo=raw.types.InputChatPhotoEmpty()
                 )
             )
         elif isinstance(peer, raw.types.InputPeerChannel):
             await self.send(
                 raw.functions.channels.EditPhoto(
-                    channel=peer,
-                    photo=raw.types.InputChatPhotoEmpty()
+                    channel=peer, photo=raw.types.InputChatPhotoEmpty()
                 )
             )
         else:

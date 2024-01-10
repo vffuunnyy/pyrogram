@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List
+from typing import List, Union
 
 from pyrogram import raw
 from pyrogram.scaffold import Scaffold
@@ -25,7 +25,7 @@ from pyrogram.scaffold import Scaffold
 class ArchiveChats(Scaffold):
     async def archive_chats(
         self,
-        chat_ids: Union[int, str, List[Union[int, str]]],
+        chat_ids: Union[int, str, list[Union[int, str]]],
     ) -> bool:
         """Archive one or more chats.
 
@@ -54,16 +54,9 @@ class ArchiveChats(Scaffold):
 
         for chat in chat_ids:
             folder_peers.append(
-                raw.types.InputFolderPeer(
-                    peer=await self.resolve_peer(chat),
-                    folder_id=1
-                )
+                raw.types.InputFolderPeer(peer=await self.resolve_peer(chat), folder_id=1)
             )
 
-        await self.send(
-            raw.functions.folders.EditPeerFolders(
-                folder_peers=folder_peers
-            )
-        )
+        await self.send(raw.functions.folders.EditPeerFolders(folder_peers=folder_peers))
 
         return True
