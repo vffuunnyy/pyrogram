@@ -113,7 +113,7 @@ ignore = [
     "FA102", # `__future__` import "annotations" missing
     "F401", # unused-import
 ]
-fixable = ["ALL", "TID252"]
+fixable = ["ALL"]
 unfixable = ["ERA"] # do not autoremove commented out code
 
 [tool.ruff.format]
